@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { scheduleSessionEndNotification } from '@/lib/session-notifications';
 
 export default function HomeScreen() {
   const [duration, setDuration] = useState('');
   const [warningTime, setWarningTime] = useState('');
+  const [isStarting, setIsStarting] = useState(false);
   const theme = useTheme();
 
   function handleDurationChange(text: string) {
@@ -35,6 +38,22 @@ export default function HomeScreen() {
     const suggestedTime = Math.floor(Number(duration) / 10);
     if (suggestedTime > 0) {
       setWarningTime(String(suggestedTime));
+    }
+  }
+
+  async function startSession() {
+    if (duration === '' || isStarting) return;
+
+    setIsStarting(true);
+    const deadline = Date.now() + Number(duration) * 60_000;
+    router.push({ pathname: '/timer', params: { deadline: String(deadline) } });
+
+    try {
+      await scheduleSessionEndNotification(deadline);
+    } catch (error) {
+      console.warn('Could not schedule the session end notification.', error);
+    } finally {
+      setIsStarting(false);
     }
   }
 
@@ -75,12 +94,13 @@ export default function HomeScreen() {
         />
         <Pressable
           accessibilityRole="button"
-          disabled={duration === ''}
+          disabled={duration === '' || isStarting}
+          onPress={startSession}
           style={({ pressed }) => [
             styles.startButton,
             { backgroundColor: theme.backgroundElement },
-            duration === '' && styles.disabledButton,
-            pressed && duration !== '' && styles.pressedButton,
+            (duration === '' || isStarting) && styles.disabledButton,
+            pressed && duration !== '' && !isStarting && styles.pressedButton,
           ]}>
           <ThemedText type="default">Start</ThemedText>
         </Pressable>
