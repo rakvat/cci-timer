@@ -1,16 +1,15 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, StyleSheet } from 'react-native';
+import { AppState, Platform, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { GONG_SOUND, playTimerEndSound } from '@/lib/timer-end-sound';
 
 export default function TimerScreen() {
-  const audioPlayer = useAudioPlayer(require('../../assets/audio/gong.wav'), {
-    downloadFirst: true,
-  });
+  const audioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
   const hasPlayedEndSound = useRef(false);
   const { deadline: deadlineParam } = useLocalSearchParams<{ deadline?: string }>();
   const deadline = Number(deadlineParam);
@@ -29,7 +28,7 @@ export default function TimerScreen() {
       if (seconds === 0) {
         if (!hasPlayedEndSound.current) {
           hasPlayedEndSound.current = true;
-          audioPlayer.play();
+          playTimerEndSound(() => audioPlayer.play());
         }
         if (interval !== undefined) clearInterval(interval);
       }

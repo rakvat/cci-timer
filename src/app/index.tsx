@@ -8,6 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { scheduleSessionEndNotification } from '@/lib/session-notifications';
+import { prepareTimerEndSound } from '@/lib/timer-end-sound';
 
 export default function HomeScreen() {
   const [duration, setDuration] = useState('');
@@ -46,6 +47,7 @@ export default function HomeScreen() {
 
     setIsStarting(true);
     const deadline = Date.now() + Number(duration) * 60_000;
+    prepareTimerEndSound();
     router.push({ pathname: '/timer', params: { deadline: String(deadline) } });
 
     try {
