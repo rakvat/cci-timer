@@ -10,8 +10,8 @@ export default function TimerScreen() {
   const { deadline: deadlineParam } = useLocalSearchParams<{ deadline?: string }>();
   const deadline = Number(deadlineParam);
   const hasValidDeadline = Number.isFinite(deadline) && deadline > 0;
-  const [remainingMinutes, setRemainingMinutes] = useState(() =>
-    hasValidDeadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 60_000)) : 0,
+  const [remainingSeconds, setRemainingSeconds] = useState(() =>
+    hasValidDeadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 0,
   );
 
   useEffect(() => {
@@ -19,9 +19,9 @@ export default function TimerScreen() {
 
     let interval: ReturnType<typeof setInterval> | undefined;
     const updateRemainingTime = () => {
-      const minutes = Math.max(0, Math.ceil((deadline - Date.now()) / 60_000));
-      setRemainingMinutes(minutes);
-      if (minutes === 0 && interval !== undefined) clearInterval(interval);
+      const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setRemainingSeconds(seconds);
+      if (seconds === 0 && interval !== undefined) clearInterval(interval);
     };
     interval = setInterval(updateRemainingTime, 1000);
     const appStateSubscription = AppState.addEventListener('change', (state) => {
@@ -42,10 +42,10 @@ export default function TimerScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.content}>
         <ThemedText type="title" style={styles.minutes}>
-          {remainingMinutes}
+          {remainingSeconds <= 60 ? remainingSeconds : Math.ceil(remainingSeconds / 60)}
         </ThemedText>
         <ThemedText type="default" themeColor="textSecondary">
-          minutes remaining
+          {remainingSeconds <= 60 ? 'seconds remaining' : 'minutes remaining'}
         </ThemedText>
       </SafeAreaView>
     </ThemedView>
