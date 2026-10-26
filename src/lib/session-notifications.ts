@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 
-const SESSION_CHANNEL_ID = 'session-timer';
+const SESSION_CHANNEL_ID = 'session-timer-gong';
 let notificationHandlerConfigured = false;
 
 export async function scheduleSessionEndNotification(deadline: number): Promise<void> {
@@ -24,7 +24,7 @@ export async function scheduleSessionEndNotification(deadline: number): Promise<
     await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
       name: 'Session timer',
       importance: Notifications.AndroidImportance.HIGH,
-      sound: 'default',
+      sound: 'gong.wav',
       vibrationPattern: [0, 250, 250, 250],
     });
   }
@@ -39,7 +39,7 @@ export async function scheduleSessionEndNotification(deadline: number): Promise<
     content: {
       title: 'Session complete',
       body: 'Your session time is up.',
-      sound: 'default',
+      sound: 'gong.wav',
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,

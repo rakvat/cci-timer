@@ -8,7 +8,9 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
 export default function TimerScreen() {
-  const audioPlayer = useAudioPlayer(require('../../assets/audio/gong.mp3'));
+  const audioPlayer = useAudioPlayer(require('../../assets/audio/gong.wav'), {
+    downloadFirst: true,
+  });
   const hasPlayedEndSound = useRef(false);
   const { deadline: deadlineParam } = useLocalSearchParams<{ deadline?: string }>();
   const deadline = Number(deadlineParam);
@@ -27,10 +29,7 @@ export default function TimerScreen() {
       if (seconds === 0) {
         if (!hasPlayedEndSound.current) {
           hasPlayedEndSound.current = true;
-          void audioPlayer
-            .seekTo(0)
-            .then(() => audioPlayer.play())
-            .catch((error) => console.warn('Could not play the timer end sound.', error));
+          audioPlayer.play();
         }
         if (interval !== undefined) clearInterval(interval);
       }

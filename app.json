@@ -29,7 +29,14 @@
           "imageWidth": 76
         }
       ],
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/audio/gong.wav"
+          ]
+        }
+      ],
       [
         "expo-audio",
         {
