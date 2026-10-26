@@ -1,5 +1,6 @@
 import { Redirect, useLocalSearchParams } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useAudioPlayer } from 'expo-audio';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -7,6 +8,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 
 export default function TimerScreen() {
+  const audioPlayer = useAudioPlayer(require('../../assets/audio/gong.mp3'));
+  const hasPlayedEndSound = useRef(false);
   const { deadline: deadlineParam } = useLocalSearchParams<{ deadline?: string }>();
   const deadline = Number(deadlineParam);
   const hasValidDeadline = Number.isFinite(deadline) && deadline > 0;
@@ -21,7 +24,16 @@ export default function TimerScreen() {
     const updateRemainingTime = () => {
       const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setRemainingSeconds(seconds);
-      if (seconds === 0 && interval !== undefined) clearInterval(interval);
+      if (seconds === 0) {
+        if (!hasPlayedEndSound.current) {
+          hasPlayedEndSound.current = true;
+          void audioPlayer
+            .seekTo(0)
+            .then(() => audioPlayer.play())
+            .catch((error) => console.warn('Could not play the timer end sound.', error));
+        }
+        if (interval !== undefined) clearInterval(interval);
+      }
     };
     interval = setInterval(updateRemainingTime, 1000);
     const appStateSubscription = AppState.addEventListener('change', (state) => {
@@ -34,7 +46,7 @@ export default function TimerScreen() {
       if (interval !== undefined) clearInterval(interval);
       appStateSubscription.remove();
     };
-  }, [deadline, hasValidDeadline]);
+  }, [audioPlayer, deadline, hasValidDeadline]);
 
   if (!hasValidDeadline) return <Redirect href="/" />;
 

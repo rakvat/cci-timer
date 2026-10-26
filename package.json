@@ -5,6 +5,7 @@
   "dependencies": {
     "@expo/ui": "~57.0.26",
     "expo": "~57.0.31",
+    "expo-audio": "~57.0.5",
     "expo-constants": "~57.0.22",
     "expo-glass-effect": "~57.0.4",
     "expo-linking": "~57.0.13",
