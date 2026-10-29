@@ -1,14 +1,17 @@
-import { Redirect, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Platform, StyleSheet } from 'react-native';
+import { AppState, Platform, Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { GONG_SOUND, playTimerEndSound } from '@/lib/timer-end-sound';
 
 export default function TimerScreen() {
+  const theme = useTheme();
   const audioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
   const hasPlayedWarningSound = useRef(false);
   const hasPlayedEndSound = useRef(false);
@@ -22,6 +25,11 @@ export default function TimerScreen() {
   const [remainingSeconds, setRemainingSeconds] = useState(() =>
     hasValidDeadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 0,
   );
+  const [remainingLabelWidth, setRemainingLabelWidth] = useState<number>();
+
+  function measureRemainingLabel(event: LayoutChangeEvent) {
+    setRemainingLabelWidth(event.nativeEvent.layout.width);
+  }
 
   useEffect(() => {
     if (!hasValidDeadline) return;
@@ -68,9 +76,25 @@ export default function TimerScreen() {
         <ThemedText type="title" style={styles.minutes}>
           {remainingSeconds <= 60 ? remainingSeconds : Math.ceil(remainingSeconds / 60)}
         </ThemedText>
-        <ThemedText type="default" themeColor="textSecondary">
+        <ThemedText
+          onLayout={measureRemainingLabel}
+          type="default"
+          themeColor="textSecondary">
           {remainingSeconds <= 60 ? 'seconds remaining' : 'minutes remaining'}
         </ThemedText>
+        {remainingSeconds === 0 && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.back()}
+            style={({ pressed }) => [
+              styles.newSessionButton,
+              remainingLabelWidth !== undefined && { width: remainingLabelWidth },
+              { backgroundColor: theme.backgroundElement },
+              pressed && styles.pressedButton,
+            ]}>
+            <ThemedText type="default">New Session</ThemedText>
+          </Pressable>
+        )}
       </SafeAreaView>
     </ThemedView>
   );
@@ -90,5 +114,18 @@ const styles = StyleSheet.create({
     lineHeight: 132,
     fontVariant: ['tabular-nums'],
     textAlign: 'center',
+  },
+  newSessionButton: {
+    position: 'absolute',
+    top: '70%',
+    alignSelf: 'center',
+    minHeight: 52,
+    paddingHorizontal: Spacing.three,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Spacing.two,
+  },
+  pressedButton: {
+    opacity: 0.7,
   },
 });
