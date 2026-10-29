@@ -16,7 +16,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.MODIFY_AUDIO_SETTINGS"
-      ]
+      ],
+      "package": "io.github.rakvat.ccitimer"
     },
     "web": {
       "output": "static",
