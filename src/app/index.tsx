@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { Link, router } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -62,26 +62,34 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
-        <ThemedText type="default">Session duration (minutes)</ThemedText>
+        <ThemedText style={styles.title} type="subtitle">
+          CCI Session-Timer
+        </ThemedText>
+        <ThemedText style={styles.timeHint} type="small">
+          All times in minutes
+        </ThemedText>
+        <ThemedText type="default">Session duration</ThemedText>
         <TextInput
-          accessibilityLabel="Session duration (minutes)"
+          accessibilityLabel="Session duration"
           keyboardType="number-pad"
           maxLength={2}
           onChangeText={handleDurationChange}
+          onSubmitEditing={startSession}
           placeholder="1–99"
           placeholderTextColor={theme.textSecondary}
           returnKeyType="done"
           style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
           value={duration}
         />
-        <ThemedText type="default">Warning time before end (minutes)</ThemedText>
+        <ThemedText type="default">Warning time before end</ThemedText>
         <TextInput
-          accessibilityLabel="Warning time before end (minutes)"
+          accessibilityLabel="Warning time before end"
           editable={duration !== ''}
           keyboardType="number-pad"
           maxLength={2}
           onChangeText={handleWarningTimeChange}
           onFocus={prefillWarningTime}
+          onSubmitEditing={startSession}
           placeholder={
             duration === '' ? '1–99' : Number(duration) > 1 ? `1–${Number(duration) - 1}` : '—'
           }
@@ -106,6 +114,13 @@ export default function HomeScreen() {
           ]}>
           <ThemedText type="default">Start</ThemedText>
         </Pressable>
+        <Link
+          href="https://co-counselling.info"
+          rel="noopener noreferrer"
+          style={[styles.footer, { color: theme.text }]}
+          target="_blank">
+          More information on CCI (Co-Counselling International) ↗
+        </Link>
       </SafeAreaView>
     </ThemedView>
   );
@@ -117,6 +132,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   safeArea: {
+    flex: 1,
     width: '100%',
     maxWidth: MaxContentWidth,
     paddingHorizontal: Spacing.four,
@@ -145,5 +161,18 @@ const styles = StyleSheet.create({
   },
   pressedButton: {
     opacity: 0.7,
+  },
+  footer: {
+    marginTop: 'auto',
+    paddingBottom: Spacing.two,
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+  title: {
+    marginBottom: Spacing.two,
+  },
+  timeHint: {
+    alignSelf: 'stretch',
+    textAlign: 'right',
   },
 });
