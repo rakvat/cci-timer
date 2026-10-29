@@ -1,15 +1,14 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { useAudioPlayer } from 'expo-audio';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useEffect, useRef, useState } from 'react';
-import { AppState, Platform, Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native';
+import { useState } from 'react';
+import { Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { useSessionTimer } from '@/hooks/use-session-timer';
 import { useTheme } from '@/hooks/use-theme';
-import { GONG_SOUND, playTimerEndSound } from '@/lib/timer-end-sound';
 
 function KeepAwakeWhileActive() {
   useKeepAwake();
@@ -18,62 +17,14 @@ function KeepAwakeWhileActive() {
 
 export default function TimerScreen() {
   const theme = useTheme();
-  const warningAudioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
-  const endAudioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
-  const hasPlayedWarningSound = useRef(false);
-  const hasPlayedEndSound = useRef(false);
   const { deadline: deadlineParam, warningTime: warningTimeParam } =
     useLocalSearchParams<{ deadline?: string; warningTime?: string }>();
-  const deadline = Number(deadlineParam);
-  const hasValidDeadline = Number.isFinite(deadline) && deadline > 0;
-  const warningTime = Number(warningTimeParam);
-  const hasWarningTime = Number.isFinite(warningTime) && warningTime > 0;
-  const warningDeadline = deadline - warningTime * 60_000;
-  const [remainingSeconds, setRemainingSeconds] = useState(() =>
-    hasValidDeadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 0,
-  );
+  const { hasValidDeadline, remainingSeconds } = useSessionTimer(deadlineParam, warningTimeParam);
   const [remainingLabelWidth, setRemainingLabelWidth] = useState<number>();
 
   function measureRemainingLabel(event: LayoutChangeEvent) {
     setRemainingLabelWidth(event.nativeEvent.layout.width);
   }
-
-  useEffect(() => {
-    if (!hasValidDeadline) return;
-
-    let interval: ReturnType<typeof setInterval> | undefined;
-    const updateRemainingTime = () => {
-      if (
-        hasWarningTime &&
-        Date.now() >= warningDeadline &&
-        !hasPlayedWarningSound.current
-      ) {
-        hasPlayedWarningSound.current = true;
-        playTimerEndSound(() => warningAudioPlayer.play());
-      }
-
-      const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-      setRemainingSeconds(seconds);
-      if (seconds === 0) {
-        if (!hasPlayedEndSound.current) {
-          hasPlayedEndSound.current = true;
-          playTimerEndSound(() => endAudioPlayer.play());
-        }
-        if (interval !== undefined) clearInterval(interval);
-      }
-    };
-    interval = setInterval(updateRemainingTime, 1000);
-    const appStateSubscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') updateRemainingTime();
-    });
-
-    updateRemainingTime();
-
-    return () => {
-      if (interval !== undefined) clearInterval(interval);
-      appStateSubscription.remove();
-    };
-  }, [deadline, endAudioPlayer, hasValidDeadline, hasWarningTime, warningAudioPlayer, warningDeadline]);
 
   if (!hasValidDeadline) return <Redirect href="/" />;
 
