@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, TextInput } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { scheduleSessionEndNotification } from '@/lib/session-notifications';
@@ -72,38 +73,23 @@ export default function HomeScreen() {
         <ThemedText style={styles.timeHint} type="small">
           All times in minutes
         </ThemedText>
-        <ThemedText type="default">Session duration</ThemedText>
-        <TextInput
-          accessibilityLabel="Session duration"
-          keyboardType="number-pad"
-          maxLength={2}
+        <LabeledNumberInput
+          label="Session duration"
           onChangeText={handleDurationChange}
           onSubmitEditing={startSession}
           placeholder="1–99"
-          placeholderTextColor={theme.textSecondary}
-          returnKeyType="done"
-          style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
           value={duration}
         />
-        <ThemedText type="default">Warning time before end</ThemedText>
-        <TextInput
-          accessibilityLabel="Warning time before end"
+        <LabeledNumberInput
+          label="Warning time before end"
+          disabled={duration === ''}
           editable={duration !== ''}
-          keyboardType="number-pad"
-          maxLength={2}
           onChangeText={handleWarningTimeChange}
           onFocus={prefillWarningTime}
           onSubmitEditing={startSession}
           placeholder={
             duration === '' ? '1–99' : Number(duration) > 1 ? `1–${Number(duration) - 1}` : '—'
           }
-          placeholderTextColor={theme.textSecondary}
-          returnKeyType="done"
-          style={[
-            styles.input,
-            { color: theme.text, borderColor: theme.backgroundSelected },
-            duration === '' && styles.disabledInput,
-          ]}
           value={warningTime}
         />
         <Pressable
@@ -142,16 +128,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     gap: Spacing.two,
-  },
-  input: {
-    minHeight: 52,
-    borderWidth: 1,
-    borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    fontSize: 18,
-  },
-  disabledInput: {
-    opacity: 0.5,
   },
   startButton: {
     minHeight: 52,
