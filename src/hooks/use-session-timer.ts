@@ -1,8 +1,8 @@
-import { useAudioPlayer } from 'expo-audio';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform } from 'react-native';
 
-import { GONG_SOUND, playTimerEndSound } from '@/lib/timer-end-sound';
+import { cancelSessionNotifications } from '@/lib/session-notifications';
+import { playTimerEndSound } from '@/lib/timer-end-sound';
 import { getRemainingSeconds, getSessionTimerConfig } from '@/lib/session-timer';
 
 export function useSessionTimer(deadlineParam?: string, warningTimeParam?: string) {
@@ -10,8 +10,6 @@ export function useSessionTimer(deadlineParam?: string, warningTimeParam?: strin
     deadlineParam,
     warningTimeParam,
   );
-  const warningAudioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
-  const endAudioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
   const hasPlayedWarningSound = useRef(false);
   const hasPlayedEndSound = useRef(false);
   const [remainingSeconds, setRemainingSeconds] = useState(() =>
@@ -29,7 +27,7 @@ export function useSessionTimer(deadlineParam?: string, warningTimeParam?: strin
         !hasPlayedWarningSound.current
       ) {
         hasPlayedWarningSound.current = true;
-        playTimerEndSound(() => warningAudioPlayer.play());
+        if (Platform.OS === 'web') playTimerEndSound(() => undefined);
       }
 
       const seconds = getRemainingSeconds(deadline);
@@ -37,7 +35,7 @@ export function useSessionTimer(deadlineParam?: string, warningTimeParam?: strin
       if (seconds === 0) {
         if (!hasPlayedEndSound.current) {
           hasPlayedEndSound.current = true;
-          playTimerEndSound(() => endAudioPlayer.play());
+          if (Platform.OS === 'web') playTimerEndSound(() => undefined);
         }
         if (interval !== undefined) clearInterval(interval);
       }
@@ -46,14 +44,16 @@ export function useSessionTimer(deadlineParam?: string, warningTimeParam?: strin
     interval = setInterval(updateRemainingTime, 1000);
     const appStateSubscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') updateRemainingTime();
+      if (state === 'background') void cancelSessionNotifications();
     });
     updateRemainingTime();
 
     return () => {
       if (interval !== undefined) clearInterval(interval);
       appStateSubscription.remove();
+      void cancelSessionNotifications();
     };
-  }, [deadline, endAudioPlayer, hasValidDeadline, hasWarningTime, warningAudioPlayer, warningDeadline]);
+  }, [deadline, hasValidDeadline, hasWarningTime, warningDeadline]);
 
   return { hasValidDeadline, remainingSeconds };
 }

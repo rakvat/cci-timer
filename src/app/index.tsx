@@ -8,7 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { scheduleSessionEndNotification } from '@/lib/session-notifications';
+import { scheduleSessionNotifications } from '@/lib/session-notifications';
 import { prepareTimerEndSound } from '@/lib/timer-end-sound';
 import { getSuggestedWarningTime } from '@/lib/warning-time';
 
@@ -55,13 +55,11 @@ export default function HomeScreen() {
       params: { deadline: String(deadline), warningTime },
     });
 
-    try {
-      await scheduleSessionEndNotification(deadline);
-    } catch (error) {
+    const warningDeadline = warningTime ? deadline - Number(warningTime) * 60_000 : undefined;
+    void scheduleSessionNotifications(deadline, warningDeadline).catch((error) => {
       console.warn('Could not schedule the session end notification.', error);
-    } finally {
-      setIsStarting(false);
-    }
+    });
+    setIsStarting(false);
   }
 
   return (
