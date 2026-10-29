@@ -1,5 +1,6 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer } from 'expo-audio';
+import { useKeepAwake } from 'expo-keep-awake';
 import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -9,6 +10,11 @@ import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { GONG_SOUND, playTimerEndSound } from '@/lib/timer-end-sound';
+
+function KeepAwakeWhileActive() {
+  useKeepAwake();
+  return null;
+}
 
 export default function TimerScreen() {
   const theme = useTheme();
@@ -72,6 +78,7 @@ export default function TimerScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {remainingSeconds > 0 && <KeepAwakeWhileActive />}
       <SafeAreaView style={styles.content}>
         <ThemedText type="title" style={styles.minutes}>
           {remainingSeconds <= 60 ? remainingSeconds : Math.ceil(remainingSeconds / 60)}
