@@ -9,6 +9,7 @@ import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { scheduleSessionEndNotification } from '@/lib/session-notifications';
 import { prepareTimerEndSound } from '@/lib/timer-end-sound';
+import { getSuggestedWarningTime } from '@/lib/warning-time';
 
 export default function HomeScreen() {
   const [duration, setDuration] = useState('');
@@ -36,9 +37,9 @@ export default function HomeScreen() {
   function prefillWarningTime() {
     if (warningTime !== '') return;
 
-    const suggestedTime = Math.floor(Number(duration) / 10);
-    if (suggestedTime > 0) {
-      setWarningTime(String(suggestedTime));
+    const suggestedTime = getSuggestedWarningTime(duration);
+    if (suggestedTime !== '') {
+      setWarningTime(suggestedTime);
     }
   }
 
