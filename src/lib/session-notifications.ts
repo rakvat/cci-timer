@@ -13,8 +13,8 @@ export async function scheduleSessionEndNotification(deadline: number): Promise<
       handleNotification: async () => ({
         shouldPlaySound: false,
         shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
+        shouldShowBanner: false,
+        shouldShowList: false,
       }),
     });
     notificationHandlerConfigured = true;
