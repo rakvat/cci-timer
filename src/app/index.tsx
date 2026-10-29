@@ -48,7 +48,10 @@ export default function HomeScreen() {
     setIsStarting(true);
     const deadline = Date.now() + Number(duration) * 60_000;
     prepareTimerEndSound();
-    router.push({ pathname: '/timer', params: { deadline: String(deadline) } });
+    router.push({
+      pathname: '/timer',
+      params: { deadline: String(deadline), warningTime },
+    });
 
     try {
       await scheduleSessionEndNotification(deadline);

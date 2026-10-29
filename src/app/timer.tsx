@@ -10,10 +10,15 @@ import { GONG_SOUND, playTimerEndSound } from '@/lib/timer-end-sound';
 
 export default function TimerScreen() {
   const audioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
+  const hasPlayedWarningSound = useRef(false);
   const hasPlayedEndSound = useRef(false);
-  const { deadline: deadlineParam } = useLocalSearchParams<{ deadline?: string }>();
+  const { deadline: deadlineParam, warningTime: warningTimeParam } =
+    useLocalSearchParams<{ deadline?: string; warningTime?: string }>();
   const deadline = Number(deadlineParam);
   const hasValidDeadline = Number.isFinite(deadline) && deadline > 0;
+  const warningTime = Number(warningTimeParam);
+  const hasWarningTime = Number.isFinite(warningTime) && warningTime > 0;
+  const warningDeadline = deadline - warningTime * 60_000;
   const [remainingSeconds, setRemainingSeconds] = useState(() =>
     hasValidDeadline ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000)) : 0,
   );
@@ -23,6 +28,15 @@ export default function TimerScreen() {
 
     let interval: ReturnType<typeof setInterval> | undefined;
     const updateRemainingTime = () => {
+      if (
+        hasWarningTime &&
+        Date.now() >= warningDeadline &&
+        !hasPlayedWarningSound.current
+      ) {
+        hasPlayedWarningSound.current = true;
+        playTimerEndSound(() => audioPlayer.play());
+      }
+
       const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
       setRemainingSeconds(seconds);
       if (seconds === 0) {
@@ -44,7 +58,7 @@ export default function TimerScreen() {
       if (interval !== undefined) clearInterval(interval);
       appStateSubscription.remove();
     };
-  }, [audioPlayer, deadline, hasValidDeadline]);
+  }, [audioPlayer, deadline, hasValidDeadline, hasWarningTime, warningDeadline]);
 
   if (!hasValidDeadline) return <Redirect href="/" />;
 
