@@ -1,7 +1,7 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useAudioPlayer } from 'expo-audio';
 import { useKeepAwake } from 'expo-keep-awake';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState, Platform, Pressable, StyleSheet, type LayoutChangeEvent } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,7 +18,8 @@ function KeepAwakeWhileActive() {
 
 export default function TimerScreen() {
   const theme = useTheme();
-  const audioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
+  const warningAudioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
+  const endAudioPlayer = useAudioPlayer(Platform.OS === 'web' ? null : GONG_SOUND);
   const hasPlayedWarningSound = useRef(false);
   const hasPlayedEndSound = useRef(false);
   const { deadline: deadlineParam, warningTime: warningTimeParam } =
@@ -37,10 +38,6 @@ export default function TimerScreen() {
     setRemainingLabelWidth(event.nativeEvent.layout.width);
   }
 
-  const playNativeTimerEndSound = useCallback(() => {
-    void audioPlayer.seekTo(0).then(() => audioPlayer.play());
-  }, [audioPlayer]);
-
   useEffect(() => {
     if (!hasValidDeadline) return;
 
@@ -52,7 +49,7 @@ export default function TimerScreen() {
         !hasPlayedWarningSound.current
       ) {
         hasPlayedWarningSound.current = true;
-        playTimerEndSound(playNativeTimerEndSound);
+        playTimerEndSound(() => warningAudioPlayer.play());
       }
 
       const seconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
@@ -60,7 +57,7 @@ export default function TimerScreen() {
       if (seconds === 0) {
         if (!hasPlayedEndSound.current) {
           hasPlayedEndSound.current = true;
-          playTimerEndSound(playNativeTimerEndSound);
+          playTimerEndSound(() => endAudioPlayer.play());
         }
         if (interval !== undefined) clearInterval(interval);
       }
@@ -76,7 +73,7 @@ export default function TimerScreen() {
       if (interval !== undefined) clearInterval(interval);
       appStateSubscription.remove();
     };
-  }, [audioPlayer, deadline, hasValidDeadline, hasWarningTime, playNativeTimerEndSound, warningDeadline]);
+  }, [deadline, endAudioPlayer, hasValidDeadline, hasWarningTime, warningAudioPlayer, warningDeadline]);
 
   if (!hasValidDeadline) return <Redirect href="/" />;
 
