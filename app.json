@@ -26,6 +26,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-notification-volume-control",
       [
         "expo-splash-screen",
         {
