@@ -5,6 +5,22 @@ const SESSION_CHANNEL_ID = 'session-timer-events';
 let notificationHandlerConfigured = false;
 let scheduledNotificationIds: string[] = [];
 let schedulingNotifications: Promise<void> | undefined;
+let notificationPermissionRequest: Promise<void> | undefined;
+
+export function requestSessionNotificationPermissions(): Promise<void> {
+  if (Platform.OS === 'web') return Promise.resolve();
+  if (notificationPermissionRequest) return notificationPermissionRequest;
+
+  notificationPermissionRequest = (async () => {
+    const Notifications = await import('expo-notifications');
+    configureNotificationHandler(Notifications);
+    await configureAndroidChannel(Notifications);
+
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') await Notifications.requestPermissionsAsync();
+  })();
+  return notificationPermissionRequest;
+}
 
 export function scheduleSessionNotifications(
   deadline: number,
@@ -30,32 +46,11 @@ export async function cancelSessionNotifications(): Promise<void> {
 
 async function schedule(deadline: number, warningDeadline?: number): Promise<void> {
   const Notifications = await import('expo-notifications');
+  configureNotificationHandler(Notifications);
+  await configureAndroidChannel(Notifications);
+  await notificationPermissionRequest;
 
-  if (!notificationHandlerConfigured) {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
-    });
-    notificationHandlerConfigured = true;
-  }
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
-      name: 'Session timer',
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: 'gong.wav',
-      vibrationPattern: [0, 250, 250, 250],
-    });
-  }
-
-  let { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') {
-    ({ status } = await Notifications.requestPermissionsAsync());
-  }
+  const { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted') return;
 
   const trigger = (timestamp: number): DateTriggerInput => ({
@@ -95,4 +90,31 @@ async function schedule(deadline: number, warningDeadline?: number): Promise<voi
     await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
     throw error;
   }
+}
+
+function configureNotificationHandler(Notifications: typeof import('expo-notifications')): void {
+  if (notificationHandlerConfigured) return;
+
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+  notificationHandlerConfigured = true;
+}
+
+async function configureAndroidChannel(
+  Notifications: typeof import('expo-notifications'),
+): Promise<void> {
+  if (Platform.OS !== 'android') return;
+
+  await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
+    name: 'Session timer',
+    importance: Notifications.AndroidImportance.HIGH,
+    sound: 'gong.wav',
+    enableVibrate: false,
+  });
 }

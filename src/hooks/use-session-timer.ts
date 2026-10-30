@@ -44,7 +44,6 @@ export function useSessionTimer(deadlineParam?: string, warningTimeParam?: strin
     interval = setInterval(updateRemainingTime, 1000);
     const appStateSubscription = AppState.addEventListener('change', (state) => {
       if (state === 'active') updateRemainingTime();
-      if (state === 'background') void cancelSessionNotifications();
     });
     updateRemainingTime();
 
