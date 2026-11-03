@@ -17,9 +17,9 @@ function KeepAwakeWhileActive() {
 
 export default function TimerScreen() {
   const theme = useTheme();
-  const { deadline: deadlineParam, warningTime: warningTimeParam } =
-    useLocalSearchParams<{ deadline?: string; warningTime?: string }>();
-  const { hasValidDeadline, remainingSeconds } = useSessionTimer(deadlineParam, warningTimeParam);
+  const { deadline: deadlineParam, warningDeadline: warningDeadlineParam } =
+    useLocalSearchParams<{ deadline?: string; warningDeadline?: string }>();
+  const { hasValidDeadline, remainingSeconds } = useSessionTimer(deadlineParam, warningDeadlineParam);
   const [remainingLabelWidth, setRemainingLabelWidth] = useState<number>();
 
   function measureRemainingLabel(event: LayoutChangeEvent) {

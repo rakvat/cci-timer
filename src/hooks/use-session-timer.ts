@@ -5,10 +5,10 @@ import { cancelSessionNotifications } from '@/lib/session-notifications';
 import { playTimerEndSound } from '@/lib/timer-end-sound';
 import { getRemainingSeconds, getSessionTimerConfig } from '@/lib/session-timer';
 
-export function useSessionTimer(deadlineParam?: string, warningTimeParam?: string) {
+export function useSessionTimer(deadlineParam?: string, warningDeadlineParam?: string) {
   const { deadline, hasValidDeadline, hasWarningTime, warningDeadline } = getSessionTimerConfig(
     deadlineParam,
-    warningTimeParam,
+    warningDeadlineParam,
   );
   const hasPlayedWarningSound = useRef(false);
   const hasPlayedEndSound = useRef(false);

@@ -9,6 +9,7 @@ import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { scheduleSessionNotifications } from '@/lib/session-notifications';
+import { getDeadline, getWarningDeadline } from '@/lib/session-timer';
 import { prepareTimerEndSound } from '@/lib/timer-end-sound';
 import { getSuggestedWarningTime } from '@/lib/warning-time';
 
@@ -48,14 +49,16 @@ export default function HomeScreen() {
     if (duration === '' || isStarting) return;
 
     setIsStarting(true);
-    const deadline = Date.now() + Number(duration) * 60_000;
     prepareTimerEndSound();
+
+    const deadline = getDeadline(duration);
+    const warningDeadline = getWarningDeadline(deadline, warningTime);
+
     router.push({
       pathname: '/timer',
-      params: { deadline: String(deadline), warningTime },
+      params: { deadline: String(deadline), warningDeadline },
     });
 
-    const warningDeadline = warningTime ? deadline - Number(warningTime) * 60_000 : undefined;
     void scheduleSessionNotifications(deadline, warningDeadline).catch((error) => {
       console.warn('Could not schedule the session end notification.', error);
     });

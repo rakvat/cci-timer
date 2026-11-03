@@ -4,10 +4,10 @@ import test from 'node:test';
 import { getRemainingSeconds, getSessionTimerConfig } from './session-timer.ts';
 
 test('parses a deadline and warning time in minutes', () => {
-  assert.deepEqual(getSessionTimerConfig('120000', '5'), {
+  assert.deepEqual(getSessionTimerConfig('120000', '110000'), {
     deadline: 120000,
     hasValidDeadline: true,
-    warningDeadline: -180000,
+    warningDeadline: 110000,
     hasWarningTime: true,
   });
 });
