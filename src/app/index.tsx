@@ -68,40 +68,42 @@ export default function HomeScreen() {
         <ThemedText style={styles.title} type="subtitle">
           CCI Session-Timer
         </ThemedText>
-        <ThemedText style={styles.timeHint} type="small">
-          All times in minutes
-        </ThemedText>
-        <LabeledNumberInput
-          label="Session duration"
-          onChangeText={handleDurationChange}
-          onSubmitEditing={startSession}
-          placeholder="1–99"
-          value={duration}
-        />
-        <LabeledNumberInput
-          label="Warning time before end"
-          disabled={duration === ''}
-          editable={duration !== ''}
-          onChangeText={handleWarningTimeChange}
-          onFocus={prefillWarningTime}
-          onSubmitEditing={startSession}
-          placeholder={
-            duration === '' ? '1–99' : Number(duration) > 1 ? `1–${Number(duration) - 1}` : '—'
-          }
-          value={warningTime}
-        />
-        <Pressable
-          accessibilityRole="button"
-          disabled={duration === '' || isStarting}
-          onPress={startSession}
-          style={({ pressed }) => [
-            styles.startButton,
-            { backgroundColor: theme.backgroundElement },
-            (duration === '' || isStarting) && styles.disabledButton,
-            pressed && duration !== '' && !isStarting && styles.pressedButton,
-          ]}>
-          <ThemedText type="default">Start</ThemedText>
-        </Pressable>
+        <ThemedView style={styles.mainSection}>
+          <ThemedText style={styles.timeHint} type="small">
+            All times in minutes
+          </ThemedText>
+          <LabeledNumberInput
+            label="Session duration"
+            onChangeText={handleDurationChange}
+            onSubmitEditing={startSession}
+            placeholder="1–99"
+            value={duration}
+          />
+          <LabeledNumberInput
+            label="Warning time before end"
+            disabled={duration === ''}
+            editable={duration !== ''}
+            onChangeText={handleWarningTimeChange}
+            onFocus={prefillWarningTime}
+            onSubmitEditing={startSession}
+            placeholder={
+              duration === '' ? '1–99' : Number(duration) > 1 ? `1–${Number(duration) - 1}` : '—'
+            }
+            value={warningTime}
+          />
+          <Pressable
+            accessibilityRole="button"
+            disabled={duration === '' || isStarting}
+            onPress={startSession}
+            style={({ pressed }) => [
+              styles.startButton,
+              { backgroundColor: theme.backgroundElement },
+              (duration === '' || isStarting) && styles.disabledButton,
+              pressed && duration !== '' && !isStarting && styles.pressedButton,
+            ]}>
+            <ThemedText type="default">Start</ThemedText>
+          </Pressable>
+        </ThemedView>
         <Link
           href="https://co-counselling.info"
           rel="noopener noreferrer"
@@ -126,6 +128,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.four,
     gap: Spacing.two,
+  },
+  mainSection: {
+    flex: 1,
+    width: '100%',
+    maxWidth: 345,
+    alignSelf: 'center',
+    gap: Spacing.two,
+    paddingTop: '25%',
   },
   startButton: {
     minHeight: 52,
