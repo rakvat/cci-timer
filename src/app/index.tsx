@@ -19,6 +19,8 @@ import {
   withSuggestedWarning,
 } from '@/lib/session-timer';
 
+const MINUTES_MAX_LENGTH = String(MAX_MINUTES).length;
+
 export default function HomeScreen() {
   const [input, setInput] = useState(EMPTY_SESSION_INPUT);
   const { durationMinutes, warningMinutes } = input;
@@ -48,6 +50,7 @@ export default function HomeScreen() {
           </ThemedText>
           <LabeledNumberInput
             label="Session duration"
+            maxLength={MINUTES_MAX_LENGTH}
             onChangeText={(text) => setInput((current) => applyDurationText(current, text))}
             onSubmitEditing={handleStart}
             placeholder={`1–${MAX_MINUTES}`}
@@ -55,8 +58,8 @@ export default function HomeScreen() {
           />
           <LabeledNumberInput
             label="Warning time before end"
+            maxLength={MINUTES_MAX_LENGTH}
             disabled={!canStart}
-            editable={canStart}
             onChangeText={(text) => setInput((current) => applyWarningText(current, text))}
             onFocus={() => setInput(withSuggestedWarning)}
             onSubmitEditing={handleStart}

@@ -1,4 +1,3 @@
-import { createElement, Fragment } from 'react';
 import { StyleSheet, TextInput, type TextInputProps } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -7,14 +6,7 @@ import { useTheme } from '@/hooks/use-theme';
 
 export type LabeledNumberInputProps = Pick<
   TextInputProps,
-  | 'editable'
-  | 'onChangeText'
-  | 'onFocus'
-  | 'onSubmitEditing'
-  | 'placeholder'
-  | 'returnKeyType'
-  | 'style'
-  | 'value'
+  'maxLength' | 'onChangeText' | 'onFocus' | 'onSubmitEditing' | 'placeholder' | 'returnKeyType' | 'style' | 'value'
 > & {
   label: string;
   disabled?: boolean;
@@ -23,29 +15,31 @@ export type LabeledNumberInputProps = Pick<
 export function LabeledNumberInput({
   label,
   disabled = false,
+  returnKeyType = 'done',
   style,
   ...inputProps
 }: LabeledNumberInputProps) {
   const theme = useTheme();
 
-  return createElement(
-    Fragment,
-    null,
-    createElement(ThemedText, { type: 'default' }, label),
-    createElement(TextInput, {
-      accessibilityLabel: label,
-      keyboardType: 'number-pad',
-      maxLength: 2,
-      placeholderTextColor: theme.textSecondary,
-      returnKeyType: inputProps.returnKeyType ?? 'done',
-      style: [
-        styles.input,
-        { color: theme.text, borderColor: theme.backgroundSelected },
-        style,
-        disabled && styles.disabled,
-      ],
-      ...inputProps,
-    }),
+  return (
+    <>
+      <ThemedText type="default">{label}</ThemedText>
+      <TextInput
+        {...inputProps}
+        accessibilityLabel={label}
+        accessibilityState={{ disabled }}
+        editable={!disabled}
+        keyboardType="number-pad"
+        placeholderTextColor={theme.textSecondary}
+        returnKeyType={returnKeyType}
+        style={[
+          styles.input,
+          { color: theme.text, borderColor: theme.backgroundSelected },
+          style,
+          disabled && styles.disabled,
+        ]}
+      />
+    </>
   );
 }
 
