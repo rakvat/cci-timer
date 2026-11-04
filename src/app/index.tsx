@@ -9,50 +9,31 @@ import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { startSession } from '@/lib/session';
-import { getSuggestedWarningTime } from '@/lib/warning-time';
+import {
+  applyDurationText,
+  applyWarningText,
+  canStartSession,
+  EMPTY_SESSION_INPUT,
+  getMaxWarningMinutes,
+  MAX_MINUTES,
+  withSuggestedWarning,
+} from '@/lib/session-timer';
 
 export default function HomeScreen() {
-  const [duration, setDuration] = useState('');
-  const [warningTime, setWarningTime] = useState('');
-  const [isStarting, setIsStarting] = useState(false);
+  const [input, setInput] = useState(EMPTY_SESSION_INPUT);
+  const { durationMinutes, warningMinutes } = input;
+  const canStart = canStartSession(input);
+  const maxWarningMinutes = getMaxWarningMinutes(durationMinutes);
   const theme = useTheme();
 
-  function handleDurationChange(text: string) {
-    const digits = text.replace(/\D/g, '').slice(0, 2);
-    if (digits === '' || Number(digits) >= 1) {
-      setDuration(digits);
-      if (digits === '' || (warningTime !== '' && Number(warningTime) >= Number(digits))) {
-        setWarningTime('');
-      }
-    }
-  }
-
-  function handleWarningTimeChange(text: string) {
-    const digits = text.replace(/\D/g, '').slice(0, 2);
-    if (digits === '' || (Number(digits) >= 1 && Number(digits) < Number(duration))) {
-      setWarningTime(digits);
-    }
-  }
-
-  function prefillWarningTime() {
-    if (warningTime !== '') return;
-
-    const suggestedTime = getSuggestedWarningTime(duration);
-    if (suggestedTime !== '') {
-      setWarningTime(suggestedTime);
-    }
-  }
-
   function handleStart() {
-    if (duration === '' || isStarting) return;
+    if (!canStart) return;
 
-    setIsStarting(true);
-    const { deadline, warningDeadline } = startSession(duration, warningTime);
+    const { deadline, warningDeadline } = startSession(durationMinutes, warningMinutes);
     router.push({
       pathname: '/timer',
       params: { deadline: String(deadline), warningDeadline },
     });
-    setIsStarting(false);
   }
 
   return (
@@ -67,32 +48,30 @@ export default function HomeScreen() {
           </ThemedText>
           <LabeledNumberInput
             label="Session duration"
-            onChangeText={handleDurationChange}
+            onChangeText={(text) => setInput((current) => applyDurationText(current, text))}
             onSubmitEditing={handleStart}
-            placeholder="1–99"
-            value={duration}
+            placeholder={`1–${MAX_MINUTES}`}
+            value={durationMinutes}
           />
           <LabeledNumberInput
             label="Warning time before end"
-            disabled={duration === ''}
-            editable={duration !== ''}
-            onChangeText={handleWarningTimeChange}
-            onFocus={prefillWarningTime}
+            disabled={!canStart}
+            editable={canStart}
+            onChangeText={(text) => setInput((current) => applyWarningText(current, text))}
+            onFocus={() => setInput(withSuggestedWarning)}
             onSubmitEditing={handleStart}
-            placeholder={
-              duration === '' ? '1–99' : Number(duration) > 1 ? `1–${Number(duration) - 1}` : '—'
-            }
-            value={warningTime}
+            placeholder={maxWarningMinutes >= 1 ? `1–${maxWarningMinutes}` : '—'}
+            value={warningMinutes}
           />
           <Pressable
             accessibilityRole="button"
-            disabled={duration === '' || isStarting}
+            disabled={!canStart}
             onPress={handleStart}
             style={({ pressed }) => [
               styles.startButton,
               { backgroundColor: theme.backgroundElement },
-              (duration === '' || isStarting) && styles.disabledButton,
-              pressed && duration !== '' && !isStarting && styles.pressedButton,
+              !canStart && styles.disabledButton,
+              pressed && canStart && styles.pressedButton,
             ]}>
             <ThemedText type="default">Start</ThemedText>
           </Pressable>
