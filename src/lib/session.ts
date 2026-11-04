@@ -2,9 +2,9 @@ import {
   cancelSessionNotifications,
   requestSessionNotificationPermissions,
   scheduleSessionNotifications,
-} from '@/lib/session-notifications';
+} from '@/services/notifications/session-notifications';
 import { getDeadline, getWarningDeadline } from '@/lib/session-timer';
-import { prepareTimerSound } from '@/lib/timer-sound';
+import { prepareTimerSound } from '@/services/audio/timer-sound';
 
 export type Session = {
   deadline: number;

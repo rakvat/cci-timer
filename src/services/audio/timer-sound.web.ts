@@ -1,5 +1,5 @@
 import { Asset } from 'expo-asset';
-import { GONG_SOUND } from './constants';
+import { GONG_SOUND } from '@/constants/audio';
 
 let audioContext: AudioContext | null = null;
 let gongBufferPromise: Promise<AudioBuffer> | null = null;

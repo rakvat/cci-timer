@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { GONG_SOUND_FILENAME } from './constants';
+import { GONG_SOUND_FILENAME } from '@/constants/audio';
 
 const SESSION_CHANNEL_ID = 'session-timer-events';
 

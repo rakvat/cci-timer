@@ -51,7 +51,7 @@ export function getSuggestedWarningMinutes(durationMinutes: string): string {
 }
 
 /** Fills in the suggested warning time if none was entered yet. */
-export function withSuggestedWarning(input: SessionInput): SessionInput {
+export function withSuggestedWarning(input: SessionInput = EMPTY_SESSION_INPUT): SessionInput {
   if (input.warningMinutes !== '') return input;
   return { ...input, warningMinutes: getSuggestedWarningMinutes(input.durationMinutes) };
 }

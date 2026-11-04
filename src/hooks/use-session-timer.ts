@@ -3,7 +3,7 @@ import { AppState } from 'react-native';
 
 import { endSession } from '@/lib/session';
 import { getRemainingSeconds, getSessionTimerConfig } from '@/lib/session-timer';
-import { playTimerSound } from '@/lib/timer-sound';
+import { playTimerSound } from '@/services/audio/timer-sound';
 
 export function useSessionTimer(deadlineParam?: string, warningDeadlineParam?: string) {
   const { deadline, hasValidDeadline, hasWarningTime, warningDeadline } = getSessionTimerConfig(

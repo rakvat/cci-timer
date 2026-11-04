@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
@@ -8,25 +7,23 @@ import { ThemedView } from '@/components/themed-view';
 import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { useSessionInput } from '@/hooks/use-session-input';
 import { startSession } from '@/lib/session';
-import {
-  applyDurationText,
-  applyWarningText,
-  canStartSession,
-  EMPTY_SESSION_INPUT,
-  getMaxWarningMinutes,
-  MAX_MINUTES,
-  withSuggestedWarning,
-} from '@/lib/session-timer';
+import { MAX_MINUTES } from '@/lib/session-timer';
 
 const MINUTES_MAX_LENGTH = String(MAX_MINUTES).length;
 
 export default function HomeScreen() {
-  const [input, setInput] = useState(EMPTY_SESSION_INPUT);
-  const { durationMinutes, warningMinutes } = input;
-  const canStart = canStartSession(input);
-  const maxWarningMinutes = getMaxWarningMinutes(durationMinutes);
   const theme = useTheme();
+  const {
+    input,
+    canStart,
+    maxWarningMinutes,
+    handleDurationChange,
+    handleWarningChange,
+    fillSuggestedWarning,
+  } = useSessionInput();
+  const { durationMinutes, warningMinutes } = input;
 
   function handleStart() {
     if (!canStart) return;
@@ -52,7 +49,7 @@ export default function HomeScreen() {
           <LabeledNumberInput
             label="Session duration"
             maxLength={MINUTES_MAX_LENGTH}
-            onChangeText={(text) => setInput((current) => applyDurationText(current, text))}
+            onChangeText={handleDurationChange}
             onSubmitEditing={handleStart}
             placeholder={`1–${MAX_MINUTES}`}
             value={durationMinutes}
@@ -61,8 +58,8 @@ export default function HomeScreen() {
             label="Warning time before end"
             maxLength={MINUTES_MAX_LENGTH}
             disabled={!canStart}
-            onChangeText={(text) => setInput((current) => applyWarningText(current, text))}
-            onFocus={() => setInput(withSuggestedWarning)}
+            onChangeText={handleWarningChange}
+            onFocus={fillSuggestedWarning}
             onSubmitEditing={handleStart}
             placeholder={maxWarningMinutes >= 1 ? `1–${maxWarningMinutes}` : '—'}
             value={warningMinutes}
