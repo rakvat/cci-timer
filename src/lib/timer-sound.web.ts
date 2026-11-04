@@ -1,21 +1,19 @@
 import { Asset } from 'expo-asset';
-import { Platform } from 'react-native';
 
-export const GONG_SOUND = require('../../assets/audio/gong.wav') as number;
+const GONG_SOUND = require('../../assets/audio/gong.wav') as number;
 
 let audioContext: AudioContext | null = null;
 let gongBufferPromise: Promise<AudioBuffer> | null = null;
 
-function getWebAudioContext(): AudioContext | null {
+function getAudioContext(): AudioContext | null {
   if (typeof window === 'undefined' || typeof window.AudioContext === 'undefined') return null;
   audioContext ??= new window.AudioContext();
   return audioContext;
 }
 
-export function prepareTimerEndSound(): void {
-  if (Platform.OS !== 'web') return;
-
-  const context = getWebAudioContext();
+/** Unlocks web audio and preloads the gong. Must be called from a user gesture. */
+export function prepareTimerSound(): void {
+  const context = getAudioContext();
   if (!context) return;
 
   void context.resume().catch(() => undefined);
@@ -30,21 +28,16 @@ export function prepareTimerEndSound(): void {
     .then((data) => context.decodeAudioData(data))
     .catch((error) => {
       gongBufferPromise = null;
-      console.warn('Could not prepare the timer end sound for web playback.', error);
+      console.warn('Could not prepare the timer sound for web playback.', error);
       throw error;
     });
   void gongBufferPromise.catch(() => undefined);
 }
 
-export function playTimerEndSound(nativePlayback: () => void): void {
-  if (Platform.OS !== 'web') {
-    nativePlayback();
-    return;
-  }
-
-  const context = getWebAudioContext();
+export function playTimerSound(): void {
+  const context = getAudioContext();
   if (!context || !gongBufferPromise) {
-    playWebAudioFallback();
+    playAudioElementFallback();
     return;
   }
 
@@ -56,13 +49,13 @@ export function playTimerEndSound(nativePlayback: () => void): void {
       source.connect(context.destination);
       source.start();
     })
-    .catch(playWebAudioFallback);
+    .catch(playAudioElementFallback);
 }
 
-function playWebAudioFallback(): void {
+function playAudioElementFallback(): void {
   const audio = new Audio(Asset.fromModule(GONG_SOUND).uri);
   audio.preload = 'auto';
   void audio.play().catch((error) => {
-    console.warn('Could not play the timer end sound in this browser.', error);
+    console.warn('Could not play the timer sound in this browser.', error);
   });
 }

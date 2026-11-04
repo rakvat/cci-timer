@@ -1,4 +1,4 @@
-const millisecondsInMinute = 60_000;
+const MILLISECONDS_IN_MINUTE = 60_000;
 
 export type SessionTimerConfig = {
   deadline: number;
@@ -25,11 +25,11 @@ export function getSessionTimerConfig(
 }
 
 export function getDeadline(deadlineParam?: string): number {
-  return Date.now() + Number(deadlineParam) * millisecondsInMinute;
+  return Date.now() + Number(deadlineParam) * MILLISECONDS_IN_MINUTE;
 }
 
 export function getWarningDeadline(deadline: number, warningParam?: string): number | undefined {
-  return warningParam ? deadline - Number(warningParam) * millisecondsInMinute : undefined;
+  return warningParam ? deadline - Number(warningParam) * MILLISECONDS_IN_MINUTE : undefined;
 }
 
 export function getRemainingSeconds(deadline: number, now = Date.now()): number {

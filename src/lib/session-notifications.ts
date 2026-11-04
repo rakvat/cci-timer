@@ -1,87 +1,77 @@
 import { Platform } from 'react-native';
-import type { DateTriggerInput } from 'expo-notifications';
+import * as Notifications from 'expo-notifications';
 
 const SESSION_CHANNEL_ID = 'session-timer-events';
-let notificationHandlerConfigured = false;
-let scheduledNotificationIds: string[] = [];
+const SOUND = 'gong.wav';
+
+let configuring: Promise<void> | undefined;
+let permissionRequest: Promise<void> | undefined;
 let schedulingNotifications: Promise<void> | undefined;
-let notificationPermissionRequest: Promise<void> | undefined;
+let scheduledNotificationIds: string[] = [];
 
 export function requestSessionNotificationPermissions(): Promise<void> {
-  if (Platform.OS === 'web') return Promise.resolve();
-  if (notificationPermissionRequest) return notificationPermissionRequest;
-
-  notificationPermissionRequest = (async () => {
-    const Notifications = await import('expo-notifications');
-    configureNotificationHandler(Notifications);
-    await configureAndroidChannel(Notifications);
-
+  permissionRequest ??= (async () => {
+    await ensureConfigured();
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') await Notifications.requestPermissionsAsync();
   })();
-  return notificationPermissionRequest;
+  return permissionRequest;
 }
 
 export function scheduleSessionNotifications(
   deadline: number,
   warningDeadline?: number,
 ): Promise<void> {
-  if (Platform.OS === 'web') return Promise.resolve();
-
-  schedulingNotifications = schedule(deadline, warningDeadline).finally(() => {
-    schedulingNotifications = undefined;
-  });
-  return schedulingNotifications;
+  const previous = schedulingNotifications;
+  const current = (async () => {
+    await previous?.catch(() => undefined);
+    await cancelScheduled();
+    await schedule(deadline, warningDeadline);
+  })();
+  schedulingNotifications = current;
+  void current
+    .finally(() => {
+      if (schedulingNotifications === current) schedulingNotifications = undefined;
+    })
+    .catch(() => undefined);
+  return current;
 }
 
 export async function cancelSessionNotifications(): Promise<void> {
-  if (Platform.OS === 'web') return;
+  await schedulingNotifications?.catch(() => undefined);
+  await cancelScheduled();
+}
 
-  await schedulingNotifications;
-  const Notifications = await import('expo-notifications');
+async function cancelScheduled(): Promise<void> {
   const ids = scheduledNotificationIds;
   scheduledNotificationIds = [];
   await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
 }
 
 async function schedule(deadline: number, warningDeadline?: number): Promise<void> {
-  const Notifications = await import('expo-notifications');
-  configureNotificationHandler(Notifications);
-  await configureAndroidChannel(Notifications);
-  await notificationPermissionRequest;
+  await ensureConfigured();
+  await permissionRequest;
 
   const { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted') return;
 
-  const trigger = (timestamp: number): DateTriggerInput => ({
-    type: Notifications.SchedulableTriggerInputTypes.DATE,
-    date: new Date(timestamp),
-    ...(Platform.OS === 'android' ? { channelId: SESSION_CHANNEL_ID } : {}),
-  });
+  const notifications = [
+    { at: warningDeadline, title: 'Warning time', body: 'Your session is nearing its end.' },
+    { at: deadline, title: 'Session over', body: 'Your session time is up.' },
+  ];
 
   const ids: string[] = [];
   try {
-    if (warningDeadline !== undefined && warningDeadline > Date.now()) {
+    for (const { at, title, body } of notifications) {
+      if (at === undefined || at <= Date.now()) continue;
       ids.push(
         await Notifications.scheduleNotificationAsync({
-          content: {
-            title: 'Warning time',
-            body: 'Your session is nearing its end.',
-            sound: 'gong.wav',
+          content: { title, body, sound: SOUND },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: new Date(at),
+            ...(Platform.OS === 'android' ? { channelId: SESSION_CHANNEL_ID } : {}),
           },
-          trigger: trigger(warningDeadline),
-        }),
-      );
-    }
-    if (deadline > Date.now()) {
-      ids.push(
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: 'Session over',
-            body: 'Your session time is up.',
-            sound: 'gong.wav',
-          },
-          trigger: trigger(deadline),
         }),
       );
     }
@@ -92,29 +82,28 @@ async function schedule(deadline: number, warningDeadline?: number): Promise<voi
   }
 }
 
-function configureNotificationHandler(Notifications: typeof import('expo-notifications')): void {
-  if (notificationHandlerConfigured) return;
+function ensureConfigured(): Promise<void> {
+  configuring ??= (async () => {
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      }),
+    });
 
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    }),
+    if (Platform.OS === 'android') {
+      await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
+        name: 'Session timer',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: SOUND,
+        enableVibrate: false,
+      });
+    }
+  })().catch((error) => {
+    configuring = undefined;
+    throw error;
   });
-  notificationHandlerConfigured = true;
-}
-
-async function configureAndroidChannel(
-  Notifications: typeof import('expo-notifications'),
-): Promise<void> {
-  if (Platform.OS !== 'android') return;
-
-  await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
-    name: 'Session timer',
-    importance: Notifications.AndroidImportance.HIGH,
-    sound: 'gong.wav',
-    enableVibrate: false,
-  });
+  return configuring;
 }

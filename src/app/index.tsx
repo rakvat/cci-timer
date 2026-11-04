@@ -8,9 +8,7 @@ import { ThemedView } from '@/components/themed-view';
 import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { scheduleSessionNotifications } from '@/lib/session-notifications';
-import { getDeadline, getWarningDeadline } from '@/lib/session-timer';
-import { prepareTimerEndSound } from '@/lib/timer-end-sound';
+import { startSession } from '@/lib/session';
 import { getSuggestedWarningTime } from '@/lib/warning-time';
 
 export default function HomeScreen() {
@@ -45,22 +43,14 @@ export default function HomeScreen() {
     }
   }
 
-  async function startSession() {
+  function handleStart() {
     if (duration === '' || isStarting) return;
 
     setIsStarting(true);
-    prepareTimerEndSound();
-
-    const deadline = getDeadline(duration);
-    const warningDeadline = getWarningDeadline(deadline, warningTime);
-
+    const { deadline, warningDeadline } = startSession(duration, warningTime);
     router.push({
       pathname: '/timer',
       params: { deadline: String(deadline), warningDeadline },
-    });
-
-    void scheduleSessionNotifications(deadline, warningDeadline).catch((error) => {
-      console.warn('Could not schedule the session end notification.', error);
     });
     setIsStarting(false);
   }
@@ -78,7 +68,7 @@ export default function HomeScreen() {
           <LabeledNumberInput
             label="Session duration"
             onChangeText={handleDurationChange}
-            onSubmitEditing={startSession}
+            onSubmitEditing={handleStart}
             placeholder="1–99"
             value={duration}
           />
@@ -88,7 +78,7 @@ export default function HomeScreen() {
             editable={duration !== ''}
             onChangeText={handleWarningTimeChange}
             onFocus={prefillWarningTime}
-            onSubmitEditing={startSession}
+            onSubmitEditing={handleStart}
             placeholder={
               duration === '' ? '1–99' : Number(duration) > 1 ? `1–${Number(duration) - 1}` : '—'
             }
@@ -97,7 +87,7 @@ export default function HomeScreen() {
           <Pressable
             accessibilityRole="button"
             disabled={duration === '' || isStarting}
-            onPress={startSession}
+            onPress={handleStart}
             style={({ pressed }) => [
               styles.startButton,
               { backgroundColor: theme.backgroundElement },

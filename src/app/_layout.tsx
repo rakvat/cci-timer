@@ -2,15 +2,13 @@ import { useEffect } from 'react';
 import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import { useColorScheme } from 'react-native';
 
-import { requestSessionNotificationPermissions } from '@/lib/session-notifications';
+import { prepareSessions } from '@/lib/session';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   useEffect(() => {
-    void requestSessionNotificationPermissions().catch((error) => {
-      console.warn('Could not request notification permissions.', error);
-    });
+    prepareSessions();
   }, []);
 
   return (

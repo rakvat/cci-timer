@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 
-import { cancelSessionNotifications } from '@/lib/session-notifications';
-import { playTimerEndSound } from '@/lib/timer-end-sound';
+import { endSession } from '@/lib/session';
 import { getRemainingSeconds, getSessionTimerConfig } from '@/lib/session-timer';
+import { playTimerSound } from '@/lib/timer-sound';
 
 export function useSessionTimer(deadlineParam?: string, warningDeadlineParam?: string) {
   const { deadline, hasValidDeadline, hasWarningTime, warningDeadline } = getSessionTimerConfig(
@@ -27,7 +27,7 @@ export function useSessionTimer(deadlineParam?: string, warningDeadlineParam?: s
         !hasPlayedWarningSound.current
       ) {
         hasPlayedWarningSound.current = true;
-        if (Platform.OS === 'web') playTimerEndSound(() => undefined);
+        playTimerSound();
       }
 
       const seconds = getRemainingSeconds(deadline);
@@ -35,7 +35,7 @@ export function useSessionTimer(deadlineParam?: string, warningDeadlineParam?: s
       if (seconds === 0) {
         if (!hasPlayedEndSound.current) {
           hasPlayedEndSound.current = true;
-          if (Platform.OS === 'web') playTimerEndSound(() => undefined);
+          playTimerSound();
         }
         if (interval !== undefined) clearInterval(interval);
       }
@@ -50,7 +50,7 @@ export function useSessionTimer(deadlineParam?: string, warningDeadlineParam?: s
     return () => {
       if (interval !== undefined) clearInterval(interval);
       appStateSubscription.remove();
-      void cancelSessionNotifications();
+      endSession();
     };
   }, [deadline, hasValidDeadline, hasWarningTime, warningDeadline]);
 
