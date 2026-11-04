@@ -1,6 +1,5 @@
 import { Asset } from 'expo-asset';
-
-const GONG_SOUND = require('../../assets/audio/gong.wav') as number;
+import { GONG_SOUND } from './constants';
 
 let audioContext: AudioContext | null = null;
 let gongBufferPromise: Promise<AudioBuffer> | null = null;

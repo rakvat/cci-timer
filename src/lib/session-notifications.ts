@@ -1,8 +1,8 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { GONG_SOUND_FILENAME } from './constants';
 
 const SESSION_CHANNEL_ID = 'session-timer-events';
-const SOUND = 'gong.wav';
 
 let configuring: Promise<void> | undefined;
 let permissionRequest: Promise<void> | undefined;
@@ -66,7 +66,7 @@ async function schedule(deadline: number, warningDeadline?: number): Promise<voi
       if (at === undefined || at <= Date.now()) continue;
       ids.push(
         await Notifications.scheduleNotificationAsync({
-          content: { title, body, sound: SOUND },
+          content: { title, body, sound: GONG_SOUND_FILENAME },
           trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: new Date(at),
@@ -97,7 +97,7 @@ function ensureConfigured(): Promise<void> {
       await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
         name: 'Session timer',
         importance: Notifications.AndroidImportance.HIGH,
-        sound: SOUND,
+        sound: GONG_SOUND_FILENAME,
         enableVibrate: false,
       });
     }

@@ -44,6 +44,7 @@ export default function HomeScreen() {
         <ThemedText style={styles.title} type="subtitle">
           CCI Session-Timer
         </ThemedText>
+        <ThemedView style={styles.topSpacer} />
         <ThemedView style={styles.mainSection}>
           <ThemedText style={styles.timeHint} type="small">
             All times in minutes
@@ -104,13 +105,15 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.four,
     gap: Spacing.two,
   },
-  mainSection: {
+  topSpacer: {
     flex: 1,
+  },
+  mainSection: {
+    flex: 4,
     width: '100%',
     maxWidth: 345,
     alignSelf: 'center',
     gap: Spacing.two,
-    paddingTop: '25%',
   },
   startButton: {
     minHeight: 52,
