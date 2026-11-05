@@ -18,6 +18,12 @@ export function requestSessionNotificationPermissions(): Promise<void> {
   return permissionRequest;
 }
 
+export async function hasSessionNotificationPermissions(): Promise<boolean> {
+  await requestSessionNotificationPermissions();
+  const { status } = await Notifications.getPermissionsAsync();
+  return status === 'granted';
+}
+
 export function scheduleSessionNotifications(
   deadline: number,
   warningDeadline?: number,

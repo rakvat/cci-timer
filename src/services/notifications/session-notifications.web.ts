@@ -2,6 +2,10 @@
 
 export async function requestSessionNotificationPermissions(): Promise<void> {}
 
+export async function hasSessionNotificationPermissions(): Promise<boolean> {
+  return true;
+}
+
 export async function scheduleSessionNotifications(
   _deadline: number,
   _warningDeadline?: number,

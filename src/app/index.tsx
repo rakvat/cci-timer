@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
@@ -8,7 +9,7 @@ import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionInput } from '@/hooks/use-session-input';
-import { startSession } from '@/lib/session';
+import { areSessionNotificationsPermitted, startSession } from '@/lib/session';
 import { MAX_MINUTES } from '@/lib/session-timer';
 
 const MINUTES_MAX_LENGTH = String(MAX_MINUTES).length;
@@ -24,6 +25,19 @@ export default function HomeScreen() {
     fillSuggestedWarning,
   } = useSessionInput();
   const { durationMinutes, warningMinutes } = input;
+  const [notificationsPermitted, setNotificationsPermitted] = useState<boolean>();
+
+  useEffect(() => {
+    let active = true;
+    areSessionNotificationsPermitted()
+      .then((permitted) => {
+        if (active) setNotificationsPermitted(permitted);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, []);
 
   function handleStart() {
     if (!canStart) return;
@@ -77,13 +91,21 @@ export default function HomeScreen() {
             <ThemedText type="default">Start</ThemedText>
           </Pressable>
         </ThemedView>
-        <Link
-          href="https://co-counselling.info"
-          rel="noopener noreferrer"
-          style={[styles.footer, { color: theme.text }]}
-          target="_blank">
-          More information on CCI (Co-Counselling International) ↗
-        </Link>
+        <ThemedView style={styles.footer}>
+          {notificationsPermitted === false && (
+            <ThemedText type="small" themeColor="warning" style={styles.warningText}>
+              You won't get any notifications for the warning time or when the session
+              ends, because notification permissions are denied.
+            </ThemedText>
+          )}
+          <Link
+            href="https://co-counselling.info"
+            rel="noopener noreferrer"
+            style={[styles.footerLink, { color: theme.text }]}
+            target="_blank">
+            More information on CCI (Co-Counselling International) ↗
+          </Link>
+        </ThemedView>
       </SafeAreaView>
     </ThemedView>
   );
@@ -128,8 +150,15 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 'auto',
     paddingBottom: Spacing.two,
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  footerLink: {
     textAlign: 'center',
     textDecorationLine: 'underline',
+  },
+  warningText: {
+    textAlign: 'center',
   },
   title: {
     marginBottom: Spacing.two,

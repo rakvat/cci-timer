@@ -1,6 +1,6 @@
 import {
   cancelSessionNotifications,
-  requestSessionNotificationPermissions,
+  hasSessionNotificationPermissions,
   scheduleSessionNotifications,
 } from '@/services/notifications/session-notifications';
 import { getDeadline, getWarningDeadline } from '@/lib/session-timer';
@@ -11,11 +11,23 @@ export type Session = {
   warningDeadline?: number;
 };
 
+let notificationPermissions: Promise<boolean> | undefined;
+
+function checkNotificationPermissions(): Promise<boolean> {
+  notificationPermissions ??= hasSessionNotificationPermissions().catch((error) => {
+    console.warn('Could not request notification permissions.', error);
+    return true;
+  });
+  return notificationPermissions;
+}
+
 /** Call once at app start so permission prompts don't interrupt the first session. */
 export function prepareSessions(): void {
-  void requestSessionNotificationPermissions().catch((error) => {
-    console.warn('Could not request notification permissions.', error);
-  });
+  void checkNotificationPermissions();
+}
+
+export function areSessionNotificationsPermitted(): Promise<boolean> {
+  return checkNotificationPermissions();
 }
 
 /** Must be called from a user gesture so web audio can be unlocked. */
