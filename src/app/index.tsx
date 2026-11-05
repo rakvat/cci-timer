@@ -94,8 +94,8 @@ export default function HomeScreen() {
         <ThemedView style={styles.footer}>
           {notificationsPermitted === false && (
             <ThemedText type="small" themeColor="warning" style={styles.warningText}>
-              You won't get any notifications for the warning time or when the session
-              ends, because notification permissions are denied.
+              You won&apos;t get any notifications for the warning time or when the session
+              ends, because notification permissions were denied.
             </ThemedText>
           )}
           <Link
