@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 
@@ -30,6 +30,8 @@ export default function HomeScreen() {
     fillSuggestedWarning,
   } = useSessionInput();
   const { durationMinutes, warningMinutes } = input;
+  // Enter submits on web; on native the keyboard action key should only dismiss the keyboard.
+  const handleSubmitEditing = Platform.OS === 'web' ? handleStart : () => Keyboard.dismiss();
   const [notificationsPermitted, setNotificationsPermitted] = useState<boolean>();
   const [dndBypassDenied, setDndBypassDenied] = useState<boolean>();
 
@@ -75,7 +77,7 @@ export default function HomeScreen() {
             label="Session duration"
             maxLength={MINUTES_MAX_LENGTH}
             onChangeText={handleDurationChange}
-            onSubmitEditing={handleStart}
+            onSubmitEditing={handleSubmitEditing}
             placeholder={`1–${MAX_MINUTES}`}
             value={durationMinutes}
           />
@@ -85,7 +87,7 @@ export default function HomeScreen() {
             disabled={!canStart}
             onChangeText={handleWarningChange}
             onFocus={fillSuggestedWarning}
-            onSubmitEditing={handleStart}
+            onSubmitEditing={handleSubmitEditing}
             placeholder={maxWarningMinutes >= 1 ? `1–${maxWarningMinutes}` : '—'}
             value={warningMinutes}
           />
