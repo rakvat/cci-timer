@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { AppState, Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
+import { AppState, Image, Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 
@@ -12,7 +12,9 @@ import { useSessionInput } from '@/hooks/use-session-input';
 import {
   areSessionNotificationsPermitted,
   canSessionNotificationsBypassDnd,
+  completeSessionOnboarding,
   dndBypassPromptSettled,
+  needsSessionOnboarding,
   openSessionDndBypassSettings,
   startSession,
 } from '@/lib/session';
@@ -35,6 +37,22 @@ export default function HomeScreen() {
   const handleSubmitEditing = Platform.OS === 'web' ? handleStart : () => Keyboard.dismiss();
   const [notificationsPermitted, setNotificationsPermitted] = useState<boolean>();
   const [dndBypassDenied, setDndBypassDenied] = useState<boolean>();
+  const [onboarding, setOnboarding] = useState<'checking' | 'required' | 'done'>('checking');
+  const [onboardingContinuing, setOnboardingContinuing] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    needsSessionOnboarding()
+      .then((needed) => {
+        if (active) setOnboarding(needed ? 'required' : 'done');
+      })
+      .catch(() => {
+        if (active) setOnboarding('done');
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -65,6 +83,19 @@ export default function HomeScreen() {
     };
   }, []);
 
+  async function handleOnboardingContinue() {
+    if (onboardingContinuing) return;
+    setOnboardingContinuing(true);
+    try {
+      await completeSessionOnboarding();
+    } catch (error) {
+      console.warn('Could not complete the permission onboarding.', error);
+    } finally {
+      setOnboardingContinuing(false);
+      setOnboarding('done');
+    }
+  }
+
   function handleStart() {
     if (!canStart) return;
 
@@ -73,6 +104,55 @@ export default function HomeScreen() {
       pathname: '/timer',
       params: { deadline: String(deadline), warningDeadline },
     });
+  }
+
+  if (onboarding !== 'done') {
+    return (
+      <ThemedView style={styles.container}>
+        <SafeAreaView style={styles.safeArea}>
+          {onboarding === 'required' && (
+            <>
+              <Image
+                source={require('../../assets/images/icon.png')}
+                style={styles.logo}
+                accessibilityLabel="CCI Session-Timer logo"
+              />
+              <ThemedText style={styles.title} type="subtitle">
+                Welcome to CCI Session-Timer
+              </ThemedText>
+              <ThemedView style={styles.mainSection}>
+                <ThemedText type="default">
+                  The app uses notifications to warn you before your session ends and when
+                  time is up, including the gong sound.
+                </ThemedText>
+                <ThemedText type="default">
+                  On Android, you&apos;ll also be asked to allow the app to bypass Do Not
+                  Disturb (DND), so the timer sound is still heard while DND is on.
+                </ThemedText>
+                <ThemedText type="small">
+                  You will be asked for permissions for both after pressing &quot;Continue&quot;.
+                  Please grant the permissions to enjoy the CCI-Timer in all of its beauty.
+                </ThemedText>
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={onboardingContinuing}
+                  onPress={handleOnboardingContinue}
+                  style={({ pressed }) => [
+                    styles.startButton,
+                    { backgroundColor: theme.backgroundElement },
+                    onboardingContinuing && styles.disabledButton,
+                    pressed && !onboardingContinuing && styles.pressedButton,
+                  ]}>
+                  <ThemedText type="default">
+                    {onboardingContinuing ? 'Continuing…' : 'Continue'}
+                  </ThemedText>
+                </Pressable>
+              </ThemedView>
+            </>
+          )}
+        </SafeAreaView>
+      </ThemedView>
+    );
   }
 
   return (
@@ -193,6 +273,12 @@ const styles = StyleSheet.create({
   },
   warningText: {
     textAlign: 'center',
+  },
+  logo: {
+    width: 120,
+    height: 120,
+    alignSelf: 'center',
+    marginTop: Spacing.four,
   },
   title: {
     marginBottom: Spacing.two,

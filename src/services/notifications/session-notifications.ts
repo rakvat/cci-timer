@@ -20,6 +20,13 @@ export function requestSessionNotificationPermissions(): Promise<void> {
   return permissionRequest;
 }
 
+/** Returns whether notifications are permitted without triggering the system prompt. */
+export async function getSessionNotificationPermissions(): Promise<boolean> {
+  await ensureConfigured();
+  const { status } = await Notifications.getPermissionsAsync();
+  return status === 'granted';
+}
+
 export async function hasSessionNotificationPermissions(): Promise<boolean> {
   await requestSessionNotificationPermissions();
   const { status } = await Notifications.getPermissionsAsync();
@@ -39,9 +46,9 @@ export function requestDndBypassAccess(): Promise<void> {
   return dndBypassPrompt;
 }
 
-/** Resolves once the Do Not Disturb prompt flow has been initiated (once per app run). */
+/** Resolves once the Do Not Disturb prompt flow has been initiated, if it was. */
 export function dndBypassPromptSettled(): Promise<void> {
-  return requestDndBypassAccess();
+  return dndBypassPrompt ?? Promise.resolve();
 }
 
 export async function canBypassDoNotDisturb(): Promise<boolean> {
