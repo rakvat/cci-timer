@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
+import { AppState, Keyboard, Platform, Pressable, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link, router } from 'expo-router';
 
@@ -12,6 +12,7 @@ import { useSessionInput } from '@/hooks/use-session-input';
 import {
   areSessionNotificationsPermitted,
   canSessionNotificationsBypassDnd,
+  dndBypassPromptSettled,
   openSessionDndBypassSettings,
   startSession,
 } from '@/lib/session';
@@ -37,18 +38,30 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let active = true;
+
+    const updateDndWarning = async () => {
+      // Wait until the automatic prompt flow has run so the warning doesn't
+      // show before the user had a chance to grant access.
+      await dndBypassPromptSettled();
+      const canBypass = await canSessionNotificationsBypassDnd();
+      if (active) setDndBypassDenied(!canBypass);
+    };
+
     areSessionNotificationsPermitted()
       .then((permitted) => {
         if (active) setNotificationsPermitted(permitted);
       })
       .catch(() => undefined);
-    canSessionNotificationsBypassDnd()
-      .then((canBypass) => {
-        if (active) setDndBypassDenied(!canBypass);
-      })
-      .catch(() => undefined);
+    void updateDndWarning().catch(() => undefined);
+
+    // Re-check when returning from the system settings screen.
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void updateDndWarning().catch(() => undefined);
+    });
+
     return () => {
       active = false;
+      subscription.remove();
     };
   }, []);
 

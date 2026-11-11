@@ -1,6 +1,7 @@
 import {
   canBypassDoNotDisturb,
   cancelSessionNotifications,
+  dndBypassPromptSettled as dndPromptSettled,
   hasSessionNotificationPermissions,
   openDoNotDisturbAccessSettings,
   requestDndBypassAccess,
@@ -27,11 +28,15 @@ function checkNotificationPermissions(): Promise<boolean> {
 /** Call once at app start so permission prompts don't interrupt the first session. */
 export function prepareSessions(): void {
   void checkNotificationPermissions();
-  requestDndBypassAccess();
+  void requestDndBypassAccess();
 }
 
 export function areSessionNotificationsPermitted(): Promise<boolean> {
   return checkNotificationPermissions();
+}
+
+export function dndBypassPromptSettled(): Promise<void> {
+  return dndPromptSettled();
 }
 
 export function canSessionNotificationsBypassDnd(): Promise<boolean> {

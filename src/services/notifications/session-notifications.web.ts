@@ -6,7 +6,9 @@ export async function hasSessionNotificationPermissions(): Promise<boolean> {
   return true;
 }
 
-export function requestDndBypassAccess(): void {}
+export async function requestDndBypassAccess(): Promise<void> {}
+
+export async function dndBypassPromptSettled(): Promise<void> {}
 
 export async function canBypassDoNotDisturb(): Promise<boolean> {
   return true;

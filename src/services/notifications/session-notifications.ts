@@ -9,7 +9,7 @@ let configuring: Promise<void> | undefined;
 let permissionRequest: Promise<void> | undefined;
 let schedulingNotifications: Promise<void> | undefined;
 let scheduledNotificationIds: string[] = [];
-let dndBypassPrompted = false;
+let dndBypassPrompt: Promise<void> | undefined;
 
 export function requestSessionNotificationPermissions(): Promise<void> {
   permissionRequest ??= (async () => {
@@ -26,15 +26,22 @@ export async function hasSessionNotificationPermissions(): Promise<boolean> {
   return status === 'granted';
 }
 
-/** Opens the Do Not Disturb access settings once per app run, if not granted yet. */
-export function requestDndBypassAccess(): void {
-  if (Platform.OS !== 'android' || dndBypassPrompted || isDndBypassGranted()) return;
-  dndBypassPrompted = true;
-  void hasSessionNotificationPermissions()
-    .then((granted) => {
-      if (granted) openDndBypassSettings();
-    })
-    .catch(() => undefined);
+/**
+ * Opens the Do Not Disturb access settings once per app run, if not granted yet.
+ * The returned promise resolves once the prompt flow has been initiated
+ * (or immediately when no prompt is needed).
+ */
+export function requestDndBypassAccess(): Promise<void> {
+  dndBypassPrompt ??= (async () => {
+    if (Platform.OS !== 'android' || isDndBypassGranted()) return;
+    if (await hasSessionNotificationPermissions()) openDndBypassSettings();
+  })().catch(() => undefined);
+  return dndBypassPrompt;
+}
+
+/** Resolves once the Do Not Disturb prompt flow has been initiated (once per app run). */
+export function dndBypassPromptSettled(): Promise<void> {
+  return requestDndBypassAccess();
 }
 
 export async function canBypassDoNotDisturb(): Promise<boolean> {
