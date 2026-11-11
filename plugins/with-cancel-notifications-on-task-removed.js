@@ -24,8 +24,7 @@ function withCancelNotificationsOnTaskRemoved(config) {
       updatedContents = updatedContents.replace(packageLine, (line) => `${line}\n${imp}\n`);
     }
 
-    const method = `
-  ${METHOD_MARKER}(rootIntent: Intent?) {
+    const method = `  ${METHOD_MARKER}(rootIntent: Intent?) {
     super.onTaskRemoved(rootIntent)
     val action = "${NOTIFICATION_EVENT_ACTION}"
     val removeAll = Intent(action).setPackage(packageName).apply {
@@ -39,14 +38,15 @@ function withCancelNotificationsOnTaskRemoved(config) {
     }
     sendBroadcast(removeAll)
   }
+
 `;
 
-    const lastBrace = updatedContents.lastIndexOf('}');
-    if (lastBrace === -1) {
-      throw new Error('Could not find the end of MainActivity.kt.');
+    const classDeclaration = /class MainActivity[^\n{]*\{/;
+    if (!classDeclaration.test(updatedContents)) {
+      throw new Error('Could not find the MainActivity class declaration in MainActivity.kt.');
     }
 
-    updatedContents = updatedContents.slice(0, lastBrace) + method + updatedContents.slice(lastBrace);
+    updatedContents = updatedContents.replace(classDeclaration, (match) => `${match}\n${method}`);
     config.modResults.contents = updatedContents;
     return config;
   });
