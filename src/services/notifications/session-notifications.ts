@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { isDndBypassGranted, openDndBypassSettings } from '../../../modules/dnd-bypass';
 import { GONG_SOUND_FILENAME } from '@/constants/audio';
 
 const SESSION_CHANNEL_ID = 'session-timer-events';
@@ -8,6 +9,7 @@ let configuring: Promise<void> | undefined;
 let permissionRequest: Promise<void> | undefined;
 let schedulingNotifications: Promise<void> | undefined;
 let scheduledNotificationIds: string[] = [];
+let dndBypassPrompted = false;
 
 export function requestSessionNotificationPermissions(): Promise<void> {
   permissionRequest ??= (async () => {
@@ -22,6 +24,25 @@ export async function hasSessionNotificationPermissions(): Promise<boolean> {
   await requestSessionNotificationPermissions();
   const { status } = await Notifications.getPermissionsAsync();
   return status === 'granted';
+}
+
+/** Opens the Do Not Disturb access settings once per app run, if not granted yet. */
+export function requestDndBypassAccess(): void {
+  if (Platform.OS !== 'android' || dndBypassPrompted || isDndBypassGranted()) return;
+  dndBypassPrompted = true;
+  void hasSessionNotificationPermissions()
+    .then((granted) => {
+      if (granted) openDndBypassSettings();
+    })
+    .catch(() => undefined);
+}
+
+export async function canBypassDoNotDisturb(): Promise<boolean> {
+  return Platform.OS === 'android' ? isDndBypassGranted() : true;
+}
+
+export function openDoNotDisturbAccessSettings(): void {
+  if (Platform.OS === 'android') openDndBypassSettings();
 }
 
 export function scheduleSessionNotifications(
@@ -61,6 +82,16 @@ async function schedule(deadline: number, warningDeadline?: number): Promise<voi
   const { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted') return;
 
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
+      name: 'Session timer',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: GONG_SOUND_FILENAME,
+      enableVibrate: false,
+      bypassDnd: isDndBypassGranted(),
+    });
+  }
+
   const notifications = [
     { at: warningDeadline, title: 'Warning time', body: 'Your session is nearing its end.' },
     { at: deadline, title: 'Session over', body: 'Your session time is up.' },
@@ -98,15 +129,6 @@ function ensureConfigured(): Promise<void> {
         shouldShowList: true,
       }),
     });
-
-    if (Platform.OS === 'android') {
-      await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
-        name: 'Session timer',
-        importance: Notifications.AndroidImportance.HIGH,
-        sound: GONG_SOUND_FILENAME,
-        enableVibrate: false,
-      });
-    }
   })().catch((error) => {
     configuring = undefined;
     throw error;

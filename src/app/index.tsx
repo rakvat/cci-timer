@@ -9,7 +9,12 @@ import { LabeledNumberInput } from '@/components/labeled-number-input';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useSessionInput } from '@/hooks/use-session-input';
-import { areSessionNotificationsPermitted, startSession } from '@/lib/session';
+import {
+  areSessionNotificationsPermitted,
+  canSessionNotificationsBypassDnd,
+  openSessionDndBypassSettings,
+  startSession,
+} from '@/lib/session';
 import { MAX_MINUTES } from '@/lib/session-timer';
 
 const MINUTES_MAX_LENGTH = String(MAX_MINUTES).length;
@@ -26,12 +31,18 @@ export default function HomeScreen() {
   } = useSessionInput();
   const { durationMinutes, warningMinutes } = input;
   const [notificationsPermitted, setNotificationsPermitted] = useState<boolean>();
+  const [dndBypassDenied, setDndBypassDenied] = useState<boolean>();
 
   useEffect(() => {
     let active = true;
     areSessionNotificationsPermitted()
       .then((permitted) => {
         if (active) setNotificationsPermitted(permitted);
+      })
+      .catch(() => undefined);
+    canSessionNotificationsBypassDnd()
+      .then((canBypass) => {
+        if (active) setDndBypassDenied(!canBypass);
       })
       .catch(() => undefined);
     return () => {
@@ -97,6 +108,14 @@ export default function HomeScreen() {
               You won&apos;t get any notifications for the warning time or when the session
               ends, because notification permissions were denied.
             </ThemedText>
+          )}
+          {notificationsPermitted !== false && dndBypassDenied === true && (
+            <Pressable onPress={openSessionDndBypassSettings}>
+              <ThemedText type="small" themeColor="warning" style={styles.warningText}>
+                Do Not Disturb may silence the timer sound. Tap here to allow this app to
+                bypass it.
+              </ThemedText>
+            </Pressable>
           )}
           <Link
             href="https://co-counselling.info"

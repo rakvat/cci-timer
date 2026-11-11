@@ -1,6 +1,9 @@
 import {
+  canBypassDoNotDisturb,
   cancelSessionNotifications,
   hasSessionNotificationPermissions,
+  openDoNotDisturbAccessSettings,
+  requestDndBypassAccess,
   scheduleSessionNotifications,
 } from '@/services/notifications/session-notifications';
 import { getDeadline, getWarningDeadline } from '@/lib/session-timer';
@@ -24,10 +27,19 @@ function checkNotificationPermissions(): Promise<boolean> {
 /** Call once at app start so permission prompts don't interrupt the first session. */
 export function prepareSessions(): void {
   void checkNotificationPermissions();
+  requestDndBypassAccess();
 }
 
 export function areSessionNotificationsPermitted(): Promise<boolean> {
   return checkNotificationPermissions();
+}
+
+export function canSessionNotificationsBypassDnd(): Promise<boolean> {
+  return canBypassDoNotDisturb();
+}
+
+export function openSessionDndBypassSettings(): void {
+  openDoNotDisturbAccessSettings();
 }
 
 /** Must be called from a user gesture so web audio can be unlocked. */
