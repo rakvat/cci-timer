@@ -65,16 +65,23 @@ export default function HomeScreen() {
       if (active) setDndBypassDenied(!canBypass);
     };
 
-    areSessionNotificationsPermitted()
-      .then((permitted) => {
-        if (active) setNotificationsPermitted(permitted);
-      })
-      .catch(() => undefined);
+    const refreshNotificationsPermitted = () => {
+      areSessionNotificationsPermitted()
+        .then((permitted) => {
+          if (active) setNotificationsPermitted(permitted);
+        })
+        .catch(() => undefined);
+    };
+
+    refreshNotificationsPermitted();
     void updateDndWarning().catch(() => undefined);
 
     // Re-check when returning from the system settings screen.
     const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active') void updateDndWarning().catch(() => undefined);
+      if (state === 'active') {
+        refreshNotificationsPermitted();
+        void updateDndWarning().catch(() => undefined);
+      }
     });
 
     return () => {
@@ -93,6 +100,13 @@ export default function HomeScreen() {
     } finally {
       setOnboardingContinuing(false);
       setOnboarding('done');
+      // Refresh warnings: permissions may have just been granted.
+      areSessionNotificationsPermitted()
+        .then(setNotificationsPermitted)
+        .catch(() => undefined);
+      canSessionNotificationsBypassDnd()
+        .then((canBypass) => setDndBypassDenied(!canBypass))
+        .catch(() => undefined);
     }
   }
 
@@ -117,7 +131,7 @@ export default function HomeScreen() {
                 style={styles.logo}
                 accessibilityLabel="CCI Session-Timer logo"
               />
-              <ThemedText style={styles.title} type="subtitle">
+              <ThemedText style={styles.welcomeTitle} type="subtitle">
                 Welcome to CCI Session-Timer
               </ThemedText>
               <ThemedView style={styles.mainSection}>
@@ -282,6 +296,10 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: Spacing.two,
+  },
+  welcomeTitle: {
+    marginBottom: Spacing.two,
+    textAlign: 'center',
   },
   timeHint: {
     alignSelf: 'stretch',

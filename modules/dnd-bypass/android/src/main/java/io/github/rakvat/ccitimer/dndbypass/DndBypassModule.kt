@@ -13,10 +13,10 @@ class DndBypassModule : Module() {
     Name("DndBypass")
 
     Function("isNotificationPolicyAccessGranted") {
-      val context = appContext.reactContext
-      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M || context == null) {
+      if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
         return@Function true
       }
+      val context = appContext.reactContext ?: return@Function false
       val notificationManager =
         context.getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
       notificationManager?.isNotificationPolicyAccessGranted ?: false
