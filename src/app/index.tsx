@@ -132,7 +132,7 @@ export default function HomeScreen() {
                 accessibilityLabel="CCI Session-Timer logo"
               />
               <ThemedText style={styles.welcomeTitle} type="subtitle">
-                Welcome to CCI Session-Timer
+                Welcome to the CCI Session Timer
               </ThemedText>
               <ThemedView style={styles.mainSection}>
                 <ThemedText type="default">

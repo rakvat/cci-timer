@@ -28,6 +28,7 @@
     "plugins": [
       "expo-router",
       "./plugins/with-notification-volume-control",
+      "./plugins/with-cancel-notifications-on-task-removed",
       [
         "expo-splash-screen",
         {
