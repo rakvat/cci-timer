@@ -20,21 +20,24 @@ class DndBypassModule : Module() {
     }
 
     OnActivityDestroys {
-      val context = appContextRef ?: return@OnActivityDestroys
-      val action = "expo.modules.notifications.NOTIFICATION_EVENT"
-      val removeAll = Intent(action).setPackage(context.packageName).apply {
-        putExtra("type", "removeAll")
+      val context = appContext.reactContext ?: appContextRef ?: return@OnActivityDestroys
+      for (type in listOf("removeAll", "dismissAll")) {
+        val action = "expo.modules.notifications.NOTIFICATION_EVENT"
+        val intent = Intent(action).setPackage(context.packageName).apply {
+          putExtra("type", type)
+        }
+        val receiver = context.packageManager
+          .queryBroadcastReceivers(Intent(action).setPackage(context.packageName), 0)
+          .firstOrNull()
+        if (receiver != null) {
+          intent.component = ComponentName(receiver.activityInfo.packageName, receiver.activityInfo.name)
+        }
+        context.sendBroadcast(intent)
       }
-      val receiver = context.packageManager
-        .queryBroadcastReceivers(Intent(action).setPackage(context.packageName), 0)
-        .firstOrNull()
-      if (receiver != null) {
-        removeAll.component = ComponentName(receiver.activityInfo.packageName, receiver.activityInfo.name)
-      }
-      context.sendBroadcast(removeAll)
     }
 
     Function("isNotificationPolicyAccessGranted") {
+      appContext.reactContext?.let { appContextRef = it }
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
         return@Function true
       }
