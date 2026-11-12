@@ -129,7 +129,7 @@ export default function HomeScreen() {
               <Image
                 source={require('../../assets/images/icon.png')}
                 style={styles.logo}
-                accessibilityLabel="CCI Session-Timer logo"
+                accessibilityLabel="CCI Session Timer logo"
               />
               <ThemedText style={styles.welcomeTitle} type="subtitle">
                 Welcome to the CCI Session Timer
@@ -145,7 +145,7 @@ export default function HomeScreen() {
                 </ThemedText>
                 <ThemedText type="small">
                   You will be asked for permissions for both after pressing &quot;Continue&quot;.
-                  Please grant the permissions to enjoy the CCI-Timer in all of its beauty.
+                  Please grant the permissions to enjoy the CCI Session Timer in all of its beauty.
                 </ThemedText>
                 <Pressable
                   accessibilityRole="button"
@@ -173,7 +173,7 @@ export default function HomeScreen() {
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ThemedText style={styles.title} type="subtitle">
-          CCI Session-Timer
+          CCI Session Timer
         </ThemedText>
         <ThemedView style={styles.topSpacer} />
         <ThemedView style={styles.mainSection}>
