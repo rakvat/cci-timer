@@ -6,6 +6,20 @@ export async function hasSessionNotificationPermissions(): Promise<boolean> {
   return true;
 }
 
+export async function getSessionNotificationPermissions(): Promise<boolean> {
+  return true;
+}
+
+export async function requestDndBypassAccess(): Promise<void> {}
+
+export async function dndBypassPromptSettled(): Promise<void> {}
+
+export async function canBypassDoNotDisturb(): Promise<boolean> {
+  return true;
+}
+
+export function openDoNotDisturbAccessSettings(): void {}
+
 export async function scheduleSessionNotifications(
   _deadline: number,
   _warningDeadline?: number,
