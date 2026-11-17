@@ -33,14 +33,14 @@ jobs:
           HOST: ${{ secrets.DEPLOY_HOST }}
           USER: ${{ secrets.DEPLOY_USER }}
         run: |
-          mkdir -p ~/.ssh
-          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
+          mkdir -p /home/runner/.ssh
+          printf '%s\n' "$SSH_KEY" > /home/runner/.ssh/deploy_key
+          chmod 600 /home/runner/.ssh/deploy_key
 
-          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/known_hosts
+          printf '%s\n' "$KNOWN_HOSTS" > /home/runner/.ssh/known_hosts
+          chmod 600 /home/runner/.ssh/known_hosts
 
-          mkdir -p ~/.config/rclone
+          mkdir -p /home/runner/.config/rclone
 
           {
             echo "[strato_cci]"
@@ -48,8 +48,8 @@ jobs:
             echo "host = $HOST"
             echo "user = $USER"
             echo "port = 22"
-            echo "key_file = ~/.ssh/deploy_key"
-            echo "known_hosts_file = ~/.ssh/known_hosts"
-          } > ~/.config/rclone/rclone.conf
+            echo "key_file = /home/runner/.ssh/deploy_key"
+            echo "known_hosts_file = /home/runner/.ssh/known_hosts"
+          } > /home/runner/.config/rclone/rclone.conf
 
-          rclone sync dist/ strato_cci:/cci-timer/
+          rclone -vv sync dist/ strato_cci:/cci-timer/
