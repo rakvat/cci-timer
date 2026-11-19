@@ -40,4 +40,11 @@ example
 
 # generated native folders
 /ios
-/android
+# not ignoring android!
+
+# Android Gradle build artifacts
+**/build/
+**/.gradle/
+
+# Local Android SDK configuration
+**/local.properties
