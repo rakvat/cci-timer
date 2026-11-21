@@ -4,6 +4,7 @@ import { requireOptionalNativeModule } from 'expo-modules-core';
 type DndBypassNativeModule = {
   isNotificationPolicyAccessGranted(): boolean;
   openNotificationPolicySettings(): void;
+  canScheduleExactAlarms(): boolean;
 };
 
 const nativeModule =
@@ -22,4 +23,13 @@ export function isDndBypassGranted(): boolean {
 /** Opens the system screen where the user grants Do Not Disturb access. */
 export function openDndBypassSettings(): void {
   nativeModule?.openNotificationPolicySettings();
+}
+
+/**
+ * Whether the app may schedule exact alarms (Android 12+).
+ * Always true on platforms without the restriction.
+ */
+export function canScheduleExactAlarms(): boolean {
+  if (Platform.OS !== 'android') return true;
+  return nativeModule?.canScheduleExactAlarms() ?? true;
 }

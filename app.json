@@ -29,20 +29,20 @@
       "expo-router",
       "./plugins/with-notification-volume-control",
       [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#000000",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
-        }
-      ],
-      [
-        "expo-notifications",
+        "./plugins/with-notification-assets",
         {
           "icon": "./assets/images/notification-icon.png",
           "sounds": [
             "./assets/audio/gong.wav"
           ]
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#000000",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
         }
       ],
       "expo-asset",

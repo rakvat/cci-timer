@@ -1,11 +1,22 @@
 import { Platform } from 'react-native';
-import * as Notifications from 'expo-notifications';
-import { isDndBypassGranted, openDndBypassSettings } from '../../../modules/dnd-bypass';
+import notifee, {
+  AlarmType,
+  AndroidImportance,
+  AuthorizationStatus,
+  TriggerType,
+  type TimestampTrigger,
+} from '@notifee/react-native';
+import {
+  canScheduleExactAlarms,
+  isDndBypassGranted,
+  openDndBypassSettings,
+} from '../../../modules/dnd-bypass';
 import { GONG_SOUND_FILENAME } from '@/constants/audio';
 
 const SESSION_CHANNEL_ID = 'session-timer-events';
+const NOTIFICATION_SOUND_RESOURCE = GONG_SOUND_FILENAME.replace(/\.wav$/i, '');
 
-let configuring: Promise<void> | undefined;
+let channelReady: Promise<void> | undefined;
 let permissionRequest: Promise<void> | undefined;
 let schedulingNotifications: Promise<void> | undefined;
 let scheduledNotificationIds: string[] = [];
@@ -13,24 +24,21 @@ let dndBypassPrompt: Promise<void> | undefined;
 
 export function requestSessionNotificationPermissions(): Promise<void> {
   permissionRequest ??= (async () => {
-    await ensureConfigured();
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') await Notifications.requestPermissionsAsync();
+    await ensureChannel();
+    await notifee.requestPermission();
   })();
   return permissionRequest;
 }
 
 /** Returns whether notifications are permitted without triggering the system prompt. */
 export async function getSessionNotificationPermissions(): Promise<boolean> {
-  await ensureConfigured();
-  const { status } = await Notifications.getPermissionsAsync();
-  return status === 'granted';
+  const settings = await notifee.getNotificationSettings();
+  return settings.authorizationStatus === AuthorizationStatus.AUTHORIZED;
 }
 
 export async function hasSessionNotificationPermissions(): Promise<boolean> {
   await requestSessionNotificationPermissions();
-  const { status } = await Notifications.getPermissionsAsync();
-  return status === 'granted';
+  return getSessionNotificationPermissions();
 }
 
 /**
@@ -86,25 +94,15 @@ export async function cancelSessionNotifications(): Promise<void> {
 async function cancelScheduled(): Promise<void> {
   const ids = scheduledNotificationIds;
   scheduledNotificationIds = [];
-  await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+  await Promise.all(ids.map((id) => notifee.cancelTriggerNotification(id)));
 }
 
 async function schedule(deadline: number, warningDeadline?: number): Promise<void> {
-  await ensureConfigured();
+  await ensureChannel();
   await permissionRequest;
 
-  const { status } = await Notifications.getPermissionsAsync();
-  if (status !== 'granted') return;
-
-  if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(SESSION_CHANNEL_ID, {
-      name: 'Session timer',
-      importance: Notifications.AndroidImportance.HIGH,
-      sound: GONG_SOUND_FILENAME,
-      enableVibrate: false,
-      bypassDnd: isDndBypassGranted(),
-    });
-  }
+  const settings = await notifee.getNotificationSettings();
+  if (settings.authorizationStatus !== AuthorizationStatus.AUTHORIZED) return;
 
   const notifications = [
     { at: warningDeadline, title: 'Warning time', body: 'Your session is nearing its end.' },
@@ -115,37 +113,56 @@ async function schedule(deadline: number, warningDeadline?: number): Promise<voi
   try {
     for (const { at, title, body } of notifications) {
       if (at === undefined || at <= Date.now()) continue;
+      const trigger: TimestampTrigger = {
+        type: TriggerType.TIMESTAMP,
+        timestamp: at,
+        ...(Platform.OS === 'android'
+          ? {
+              alarmManager: {
+                type: canScheduleExactAlarms()
+                  ? AlarmType.SET_EXACT_AND_ALLOW_WHILE_IDLE
+                  : AlarmType.SET_AND_ALLOW_WHILE_IDLE,
+              },
+            }
+          : {}),
+      };
       ids.push(
-        await Notifications.scheduleNotificationAsync({
-          content: { title, body, sound: GONG_SOUND_FILENAME },
-          trigger: {
-            type: Notifications.SchedulableTriggerInputTypes.DATE,
-            date: new Date(at),
-            ...(Platform.OS === 'android' ? { channelId: SESSION_CHANNEL_ID } : {}),
+        await notifee.createTriggerNotification(
+          {
+            title,
+            body,
+            android: {
+              channelId: SESSION_CHANNEL_ID,
+              smallIcon: 'notification_icon',
+              pressAction: { id: 'default' },
+            },
+            ios: { sound: GONG_SOUND_FILENAME },
           },
-        }),
+          trigger,
+        ),
       );
     }
     scheduledNotificationIds = ids;
   } catch (error) {
-    await Promise.all(ids.map((id) => Notifications.cancelScheduledNotificationAsync(id)));
+    await Promise.all(ids.map((id) => notifee.cancelTriggerNotification(id)));
     throw error;
   }
 }
 
-function ensureConfigured(): Promise<void> {
-  configuring ??= (async () => {
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-        shouldShowBanner: true,
-        shouldShowList: true,
-      }),
+function ensureChannel(): Promise<void> {
+  channelReady ??= (async () => {
+    if (Platform.OS !== 'android') return;
+    await notifee.createChannel({
+      id: SESSION_CHANNEL_ID,
+      name: 'Session timer',
+      importance: AndroidImportance.HIGH,
+      sound: NOTIFICATION_SOUND_RESOURCE,
+      vibration: false,
+      bypassDnd: isDndBypassGranted(),
     });
   })().catch((error) => {
-    configuring = undefined;
+    channelReady = undefined;
     throw error;
   });
-  return configuring;
+  return channelReady;
 }
